@@ -1,6 +1,6 @@
 {
   "name": "react-vt",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "A react visual testing tool",
   "main": "index.js",
   "scripts": {
@@ -17,7 +17,9 @@
   },
   "homepage": "https://github.com/brIAN-3/react-vt#readme",
   "bin": {
-   "react-vt": "./cli/cli.js" 
+    "react-vt": "./cli/cli.js"
+  },
+  "dependencies": {
+    "commander": "^2.11.0"
   }
 }
-
