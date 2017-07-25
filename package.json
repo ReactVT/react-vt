@@ -1,0 +1,19 @@
+{
+  "name": "react-vt",
+  "version": "1.0.0",
+  "description": "A react visual testing tool",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/brIAN-3/react-vt.git"
+  },
+  "author": "brIAN-3",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/brIAN-3/react-vt/issues"
+  },
+  "homepage": "https://github.com/brIAN-3/react-vt#readme"
+}
