@@ -1,5 +1,20 @@
+function cloneDeep(value) {
+  if (!(value instanceof Object)) return value;
+  const result = new value.constructor;
+  if (value.constructor === Array) {
+    value.forEach(item => result.push(cloneDeep(item)));
+  } else if (typeof value === 'function') {
+    // spit out function name
+    return value.name;
+  } else {
+    for (let key in value) {
+      result[key] = cloneDeep(value[key]);
+    }
+  }
+  return result;
+}
+
 const parentTraverse = (dom) => {
-  console.log(dom)
   const data = {};
   // target parent state
   // add conditional for whether or not parent component is smart otherwise throw error
@@ -16,7 +31,7 @@ const parentTraverse = (dom) => {
 
   console.log(data);
   // send traversed DOM from react app to content script
-  setTimeout(()=>window.postMessage({ type: 'sample', data: 'data here'}, "*"), 0);
+  setTimeout(()=>window.postMessage({ type: 'sample', data: data}, "*"), 0);
   
   // listens for message from content script
   window.addEventListener('message', function(event) {
@@ -28,28 +43,28 @@ const parentTraverse = (dom) => {
       console.log("webpage received this from content script", event);
     }
   }, false);
-
+  return data; 
 };
 
 const traverse = (child) => {
   const childData = {
     children: [],
   };
-  let children;
+  let children; 
   // set conditional for component vs not
   if (child.constructor.name === 'ReactCompositeComponentWrapper') {
     childData.name = child._currentElement.type.name;
     childData.component = true;
-    childData.state = child._instance.state;
-    childData.props = child._instance.props;
+    childData.state = cloneDeep(child._instance.state);
+    childData.props = cloneDeep(child._instance.props);
     children = child._renderedComponent._renderedChildren;
   } else {
     childData.name = child._currentElement.type;
     childData.component = false;
     childData.state = null;
-    childData.props = child._currentElement.props;
+    childData.props = null;
     children = child._renderedChildren;
-  }
+  } 
   if (children) {
       Object.values(children).forEach((child) => {
         childData.children.push(traverse(child));
@@ -57,5 +72,4 @@ const traverse = (child) => {
   }
   return childData;
 };
-
 module.exports = parentTraverse;
