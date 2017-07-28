@@ -13,7 +13,22 @@ const parentTraverse = (dom) => {
   Object.values(children).forEach((child) => {
     data.children.push(traverse(child));
   });
+
   console.log(data);
+  // send traversed DOM from react app to content script
+  setTimeout(()=>window.postMessage({ type: 'sample', data: 'data here'}, "*"), 0);
+  
+  // listens for message from content script
+  window.addEventListener('message', function(event) {
+    // only accept messges to self
+    if (event.source != window) return;
+    // specify message type to target specific message
+    // filter out other messages floating around in existing context
+    if (event.data.type === 'backgroundmsg') {
+      console.log("webpage received this from content script", event);
+    }
+  }, false);
+
 };
 
 const traverse = (child) => {
