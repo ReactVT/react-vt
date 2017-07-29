@@ -1,11 +1,9 @@
-import React, { Component } from 'react';
 const parentTraverse = require('./dom-parse.js');
-
-function injector() {
+// importing React from example app
+function injector(React) {
   let traversedDom;
-
-  const func = Component.prototype.setState;
-  Component.prototype.setState = function(...args) {
+  const func = React.Component.prototype.setState;
+  React.Component.prototype.setState = function(...args) {
     console.log('state hooked');
     // set timeout to delay traverse so that it is appended to original setState
     setTimeout(()=> {
@@ -26,4 +24,4 @@ function injector() {
     }
   }, false);
 }
-module.exports = injector();
+module.exports = injector;
