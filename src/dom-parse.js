@@ -14,7 +14,7 @@ function cloneDeep(value) {
 }
 
 const parentTraverse = (dom) => {
-  console.log(dom)
+  console.log(dom);
   const data = {};
   // target parent state
   // add conditional for whether or not parent component is smart otherwise throw error
@@ -28,12 +28,10 @@ const parentTraverse = (dom) => {
   Object.values(children).forEach((child) => {
     data.children.push(traverse(child));
   });
-  console.log(data);
-  console.log(JSON.stringify(data));
+  return data;
 };
 
 const traverse = (child) => {
-  console.log('child is', child);
   const childData = {
     children: [],
   };
@@ -61,3 +59,5 @@ const traverse = (child) => {
   }
   return childData;
 };
+
+module.exports = parentTraverse;

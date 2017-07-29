@@ -56,7 +56,7 @@
 
 	var _App2 = _interopRequireDefault(_App);
 
-	var _application = __webpack_require__(190);
+	var _application = __webpack_require__(192);
 
 	var _application2 = _interopRequireDefault(_application);
 
@@ -815,45 +815,43 @@
 	var warning = emptyFunction;
 
 	if (process.env.NODE_ENV !== 'production') {
-	  (function () {
-	    var printWarning = function printWarning(format) {
-	      for (var _len = arguments.length, args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-	        args[_key - 1] = arguments[_key];
+	  var printWarning = function printWarning(format) {
+	    for (var _len = arguments.length, args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+	      args[_key - 1] = arguments[_key];
+	    }
+
+	    var argIndex = 0;
+	    var message = 'Warning: ' + format.replace(/%s/g, function () {
+	      return args[argIndex++];
+	    });
+	    if (typeof console !== 'undefined') {
+	      console.error(message);
+	    }
+	    try {
+	      // --- Welcome to debugging React ---
+	      // This error was thrown as a convenience so that you can use this stack
+	      // to find the callsite that caused this warning to fire.
+	      throw new Error(message);
+	    } catch (x) {}
+	  };
+
+	  warning = function warning(condition, format) {
+	    if (format === undefined) {
+	      throw new Error('`warning(condition, format, ...args)` requires a warning ' + 'message argument');
+	    }
+
+	    if (format.indexOf('Failed Composite propType: ') === 0) {
+	      return; // Ignore CompositeComponent proptype check.
+	    }
+
+	    if (!condition) {
+	      for (var _len2 = arguments.length, args = Array(_len2 > 2 ? _len2 - 2 : 0), _key2 = 2; _key2 < _len2; _key2++) {
+	        args[_key2 - 2] = arguments[_key2];
 	      }
 
-	      var argIndex = 0;
-	      var message = 'Warning: ' + format.replace(/%s/g, function () {
-	        return args[argIndex++];
-	      });
-	      if (typeof console !== 'undefined') {
-	        console.error(message);
-	      }
-	      try {
-	        // --- Welcome to debugging React ---
-	        // This error was thrown as a convenience so that you can use this stack
-	        // to find the callsite that caused this warning to fire.
-	        throw new Error(message);
-	      } catch (x) {}
-	    };
-
-	    warning = function warning(condition, format) {
-	      if (format === undefined) {
-	        throw new Error('`warning(condition, format, ...args)` requires a warning ' + 'message argument');
-	      }
-
-	      if (format.indexOf('Failed Composite propType: ') === 0) {
-	        return; // Ignore CompositeComponent proptype check.
-	      }
-
-	      if (!condition) {
-	        for (var _len2 = arguments.length, args = Array(_len2 > 2 ? _len2 - 2 : 0), _key2 = 2; _key2 < _len2; _key2++) {
-	          args[_key2 - 2] = arguments[_key2];
-	        }
-
-	        printWarning.apply(undefined, [format].concat(args));
-	      }
-	    };
-	  })();
+	      printWarning.apply(undefined, [format].concat(args));
+	    }
+	  };
 	}
 
 	module.exports = warning;
@@ -18881,18 +18879,11 @@
 
 	/**
 	 * Copyright (c) 2013-present, Facebook, Inc.
+	 * All rights reserved.
 	 *
-	 * Licensed under the Apache License, Version 2.0 (the "License");
-	 * you may not use this file except in compliance with the License.
-	 * You may obtain a copy of the License at
-	 *
-	 * http://www.apache.org/licenses/LICENSE-2.0
-	 *
-	 * Unless required by applicable law or agreed to in writing, software
-	 * distributed under the License is distributed on an "AS IS" BASIS,
-	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	 * See the License for the specific language governing permissions and
-	 * limitations under the License.
+	 * This source code is licensed under the BSD-style license found in the
+	 * LICENSE file in the root directory of this source tree. An additional grant
+	 * of patent rights can be found in the PATENTS file in the same directory.
 	 *
 	 * @typechecks
 	 */
@@ -22225,6 +22216,10 @@
 
 	var _GameList2 = _interopRequireDefault(_GameList);
 
+	var _inject = __webpack_require__(190);
+
+	var _inject2 = _interopRequireDefault(_inject);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -22232,6 +22227,8 @@
 	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	(0, _inject2.default)(_react2.default);
 
 	var gameStore = [];
 
@@ -22281,10 +22278,22 @@
 	    value: function componentDidMount() {
 	      var _this2 = this;
 
+	      var self = this;
+	      setTimeout(function () {
+	        self.setState({
+	          rows: [['', '', ''], ['', '', ''], ['', '', ''], ['', '', '']]
+	        });
+	      }, 6000);
+
 	      fetchGames().then(function (gameList) {
 	        gameStore = gameList;
 	        _this2.setState(Object.assign(_this2.state, { gameList: gameStore }));
 	      });
+	    }
+	  }, {
+	    key: 'componentDidUpdate',
+	    value: function componentDidUpdate() {
+	      console.log('did update');
 	    }
 	  }, {
 	    key: 'handleClick',
@@ -22981,11 +22990,13 @@
 /* 189 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	"use strict";
+	'use strict';
 
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 	var _react = __webpack_require__(1);
 
@@ -22993,32 +23004,76 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var GameList = function GameList(props) {
-	  var gameList = props.gameList;
-	  var listElements = gameList.map(function (game) {
-	    return _react2.default.createElement(
-	      "li",
-	      { key: game.createdAt },
-	      game.winner,
-	      " won at ",
-	      game.createdAt
-	    );
-	  });
-	  return _react2.default.createElement(
-	    "div",
-	    { id: "gameList" },
-	    _react2.default.createElement(
-	      "h3",
-	      null,
-	      "Previous matches"
-	    ),
-	    _react2.default.createElement(
-	      "ul",
-	      null,
-	      listElements
-	    )
-	  );
-	};
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	function getInitialState() {
+	  return {
+	    text: 'first button'
+	  };
+	}
+
+	var GameList = function (_Component) {
+	  _inherits(GameList, _Component);
+
+	  function GameList(props) {
+	    _classCallCheck(this, GameList);
+
+	    var _this = _possibleConstructorReturn(this, (GameList.__proto__ || Object.getPrototypeOf(GameList)).call(this, props));
+
+	    _this.state = getInitialState();
+	    return _this;
+	  }
+
+	  _createClass(GameList, [{
+	    key: 'componentDidMount',
+	    value: function componentDidMount() {
+	      // let self = this;
+	      // setTimeout(function() {
+	      //   self.setState({
+	      //     text: 'second button'});
+	      // }, 6000);
+	    }
+	  }, {
+	    key: 'render',
+	    value: function render() {
+	      var gameList = this.props.gameList;
+	      var listElements = gameList.map(function (game) {
+	        return _react2.default.createElement(
+	          'li',
+	          { key: game.createdAt },
+	          game.winner,
+	          ' won at ',
+	          game.createdAt
+	        );
+	      });
+	      return _react2.default.createElement(
+	        'div',
+	        { id: 'gameList' },
+	        _react2.default.createElement(
+	          'button',
+	          null,
+	          this.state.text
+	        ),
+	        _react2.default.createElement(
+	          'h3',
+	          null,
+	          'Previous matches'
+	        ),
+	        _react2.default.createElement(
+	          'ul',
+	          null,
+	          listElements
+	        )
+	      );
+	    }
+	  }]);
+
+	  return GameList;
+	}(_react.Component);
 
 	GameList.propTypes = {
 	  gameList: _react.PropTypes.array.isRequired
@@ -23030,13 +23085,127 @@
 /* 190 */
 /***/ (function(module, exports, __webpack_require__) {
 
+	'use strict';
+
+	var parentTraverse = __webpack_require__(191);
+	// importing React from example app
+	function injector(React) {
+	  var traversedDom = void 0;
+	  var func = React.Component.prototype.setState;
+	  React.Component.prototype.setState = function () {
+	    var _this = this;
+
+	    console.log('state hooked');
+	    // set timeout to delay traverse so that it is appended to original setState
+	    setTimeout(function () {
+	      traversedDom = parentTraverse(_this);
+	      // specify message type to target specific message
+	      window.postMessage({ type: 'virtualdom', data: traversedDom }, "*");
+	    }, 0);
+
+	    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+	      args[_key] = arguments[_key];
+	    }
+
+	    return func.apply(this, args);
+	  };
+
+	  // listens for messages from backgroundjs -> content script -> webpage
+	  window.addEventListener('message', function (event) {
+	    // only accept messges to self
+	    if (event.source != window) return;
+	    // filter out other messages floating around in existing context
+	    if (event.data.type === 'backgroundmsg') {
+	      console.log("webpage received this from content script", event);
+	    }
+	  }, false);
+	}
+
+	module.exports = injector;
+
+/***/ }),
+/* 191 */
+/***/ (function(module, exports) {
+
+	'use strict';
+
+	function cloneDeep(value) {
+	  if (!(value instanceof Object)) return value;
+	  var result = new value.constructor();
+	  if (value.constructor === Array) {
+	    value.forEach(function (item) {
+	      return result.push(cloneDeep(item));
+	    });
+	  } else if (typeof value === 'function') {
+	    return 'function';
+	  } else {
+	    for (var key in value) {
+	      result[key] = cloneDeep(value[key]);
+	    }
+	  }
+	  return result;
+	}
+
+	var parentTraverse = function parentTraverse(dom) {
+	  console.log(dom);
+	  var data = {};
+	  // target parent state
+	  // add conditional for whether or not parent component is smart otherwise throw error
+	  data.name = dom.constructor.name;
+	  data.component = true;
+	  data.state = dom.state;
+	  data.children = [];
+
+	  // make call to another function where it will traverse through children
+	  var children = dom._reactInternalInstance._renderedComponent._renderedChildren;
+	  Object.values(children).forEach(function (child) {
+	    data.children.push(traverse(child));
+	  });
+	  return data;
+	};
+
+	var traverse = function traverse(child) {
+	  var childData = {
+	    children: []
+	  };
+	  var children = void 0;
+	  var props;
+	  // set conditional for component vs not
+	  if (child.constructor.name === 'ReactCompositeComponentWrapper') {
+	    childData.name = child._currentElement.type.name;
+	    childData.component = true;
+	    childData.state = cloneDeep(child._instance.state);
+	    childData.props = cloneDeep(child._instance.props);
+	    children = child._renderedComponent._renderedChildren;
+	  } else {
+	    childData.name = child._currentElement.type;
+	    childData.component = false;
+	    childData.state = null;
+	    childData.props = null;
+	    children = child._renderedChildren;
+	  }
+
+	  if (children) {
+	    Object.values(children).forEach(function (child) {
+	      childData.children.push(traverse(child));
+	    });
+	  }
+	  return childData;
+	};
+
+	module.exports = parentTraverse;
+
+/***/ }),
+/* 192 */
+/***/ (function(module, exports, __webpack_require__) {
+
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 
 	// load the styles
-	var content = __webpack_require__(191);
+	var content = __webpack_require__(193);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
-	var update = __webpack_require__(193)(content, {});
+	var update = __webpack_require__(195)(content, {});
 	if(content.locals) module.exports = content.locals;
 	// Hot Module Replacement
 	if(false) {
@@ -23053,10 +23222,10 @@
 	}
 
 /***/ }),
-/* 191 */
+/* 193 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	exports = module.exports = __webpack_require__(192)();
+	exports = module.exports = __webpack_require__(194)();
 	// imports
 
 
@@ -23067,7 +23236,7 @@
 
 
 /***/ }),
-/* 192 */
+/* 194 */
 /***/ (function(module, exports) {
 
 	/*
@@ -23123,7 +23292,7 @@
 
 
 /***/ }),
-/* 193 */
+/* 195 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/*

@@ -2,6 +2,8 @@ import fetch from 'isomorphic-fetch';
 import React, { Component } from 'react';
 import Row from './Row';
 import GameList from './GameList';
+import injector from './../../../../src/inject.js';
+injector(React);
 
 let gameStore = [];
 
@@ -53,6 +55,16 @@ class App extends Component {
   }
 
   componentDidMount() {
+    let self = this;
+    setTimeout(function() {
+      self.setState({
+      rows: [['', '', ''],
+        ['', '', ''],
+        ['', '', ''],
+        ['', '', '']]
+      });
+    }, 6000);
+
     fetchGames()
       .then(gameList => {
         gameStore = gameList;
@@ -61,6 +73,10 @@ class App extends Component {
           { gameList: gameStore }
         ));
       });
+  }
+
+  componentDidUpdate() {
+    console.log('did update');
   }
 
   handleClick(row, square) {
