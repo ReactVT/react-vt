@@ -1,0 +1,154 @@
+body {
+  background-color: black; 
+  text-align: center; 
+  color: black;
+  font-family: Helvetica; 
+}
+
+#logout {
+  text-decoration: none; 
+  color: black;
+  line-height: 2;
+}
+
+#shoppify {
+  margin-top: 80px;
+  margin-bottom: 30px;
+  padding-bottom: 0; 
+  color: white;
+}
+
+#signup {
+  margin: 0;
+  padding: 0;
+  margin-bottom: 20px;
+  color: white;
+}
+
+#container {
+  background-color: rgb(229, 229, 229);
+  width: 700px; 
+  text-align: center; 
+  margin: auto;
+  margin-top: 100px;
+  border-radius: 10px; 
+}
+
+#shopList {
+  padding-top: 20px;
+}
+
+#list {
+  text-align: center; 
+  margin: 0;
+  padding: 0;
+}
+
+.listItem {
+  list-style: none;
+  border-top: 1px solid rgb(229, 229, 229);
+  font-size: 20px;
+  margin: auto; 
+  padding-left: 20px;
+  background-color: white;
+  color: black;
+  line-height: 1.3; 
+}
+
+.listInput {
+  border: none;
+  font-size: 18px;
+  width: 100%;
+  margin: auto; 
+  background-color: white;
+  color: black;
+  text-align: center; 
+}
+
+.destroy {
+  content: '';
+  float: right;
+  vertical-align: middle; 
+   background-color: Transparent;
+    background-repeat:no-repeat;
+    border: none;
+    overflow: hidden;
+    outline:none;
+    padding: 0;
+    margin: 0;
+    margin-right: 10px;
+}
+
+.destroy:after {
+  font-size: 20px;
+  content: '✖';
+  color: transparent;
+}
+
+.destroy:hover:after {
+  color: #4d4d4d;
+}
+
+#submitbutton {
+  font-size: 22px;
+  margin-top: 10px;
+}
+
+#signup {
+  margin-top: 35px;
+}
+
+#signupPage {
+  font-family: Helvetica; 
+  margin-top: 35px;
+  text-align: center; 
+}
+
+.textinput {
+  display: block;
+  float: center;
+  margin: 3 auto;
+  font-size: 20px;
+  width: 400px;
+}
+
+#github {
+  width: 300px;
+  height: 60px;
+  background-color: white; 
+  border-radius: 10px;
+  display: inline-block;
+}
+
+#oauth {
+  font-size: 18px;
+  color: black;
+}
+
+#gitimg {
+  height: 40px;
+  display: inline;
+  float: left;
+  margin-top: 10px;
+  margin-left: 10px;
+}
+
+#switchpage {
+  color: white;
+  margin-top: 10px;
+  text-decoration: none; 
+  display: block;
+}
+
+#listInput:focus::-webkit-input-placeholder { /* For WebKit, Blink, Edge */
+   opacity: 0;
+}
+#listInput:focus:-moz-placeholder { /*For Mozilla Firefox 4 to 18 */
+   opacity: 0;
+}
+#listInput:focus::-moz-placeholder { /*For Mozilla Firefox 19+ */
+   opacity: 0;
+}
+#listInput:focus:-ms-input-placeholder { /*For Internet Explorer 10-11 */
+   opacity: 0;
+}
