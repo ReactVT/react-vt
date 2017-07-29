@@ -24,4 +24,5 @@ function injector(React) {
     }
   }, false);
 }
+
 module.exports = injector;
