@@ -48,6 +48,7 @@ const traverse = (child) => {
     childData.name = child._currentElement.type;
     childData.component = false;
     childData.state = null;
+    // To revise later
     childData.props = null;
     children = child._renderedChildren;
   }
