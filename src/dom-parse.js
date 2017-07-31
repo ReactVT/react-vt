@@ -19,8 +19,8 @@ const parentTraverse = (dom) => {
   // target parent state
   // add conditional for whether or not parent component is smart otherwise throw error
   data.name = dom.constructor.name;
-  data.component = true;
-  data.state = dom.state;
+  data.attributes.component = true;
+  data.attributes.state = dom.state;
   data.children = [];
   
   // make call to another function where it will traverse through children
@@ -40,16 +40,16 @@ const traverse = (child) => {
   // set conditional for component vs not
   if (child.constructor.name === 'ReactCompositeComponentWrapper') {
     childData.name = child._currentElement.type.name;
-    childData.component = true;
-    childData.state = cloneDeep(child._instance.state);
-    childData.props = cloneDeep(child._instance.props);
+    childData.attributes.component = true;
+    childData.attributes.state = cloneDeep(child._instance.state);
+    childData.attributes.props = cloneDeep(child._instance.props);
     children = child._renderedComponent._renderedChildren;
   } else {
     childData.name = child._currentElement.type;
-    childData.component = false;
-    childData.state = null;
+    childData.attributes.component = false;
+    childData.attributes.state = null;
     // To revise later
-    childData.props = null;
+    childData.attributes.props = null;
     children = child._renderedChildren;
   }
   
