@@ -7,7 +7,7 @@ function injector(React) {
     console.log('state hooked');
     // set timeout to delay traverse so that it is appended to original setState
     setTimeout(()=> {
-      traversedDom = parentTraverse(this)
+      traversedDom = parentTraverse(this);
       // specify message type to target specific message
       window.postMessage({ type: 'virtualdom', data: traversedDom}, "*");
   }, 0);

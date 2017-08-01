@@ -13,9 +13,13 @@ function cloneDeep(value) {
     return result;
 }
 
+let iterableId = 0;
+
 const parentTraverse = (dom) => {
-  console.log(dom);
-  const data = {};
+  console.log('DOM', dom);
+  const data = {
+    attributes: {},
+  };
   // target parent state
   // add conditional for whether or not parent component is smart otherwise throw error
   data.name = dom.constructor.name;
@@ -23,6 +27,11 @@ const parentTraverse = (dom) => {
   data.attributes.state = dom.state;
   data.children = [];
   
+  // assign property as a flag for spy
+  // TODO - add conditional to not add spyID if it already exists
+  dom._instance = { _spyID: iterableId };
+  iterableId += 1;
+
   // make call to another function where it will traverse through children
   const children = dom._reactInternalInstance._renderedComponent._renderedChildren;
   Object.values(children).forEach((child) => {
@@ -33,6 +42,7 @@ const parentTraverse = (dom) => {
 
 const traverse = (child) => {
   const childData = {
+    attributes: {},
     children: [],
   };
   let children;
@@ -40,6 +50,10 @@ const traverse = (child) => {
   // set conditional for component vs not
   if (child.constructor.name === 'ReactCompositeComponentWrapper') {
     childData.name = child._currentElement.type.name;
+    console.log('this is child', child)
+    child._instance._spyID = iterableId;
+    iterableId += 1;
+
     childData.attributes.component = true;
     childData.attributes.state = cloneDeep(child._instance.state);
     childData.attributes.props = cloneDeep(child._instance.props);
