@@ -23146,15 +23146,24 @@
 	  return result;
 	}
 
+	var iterableId = 0;
+
 	var parentTraverse = function parentTraverse(dom) {
-	  console.log(dom);
-	  var data = {};
+	  console.log('DOM', dom);
+	  var data = {
+	    attributes: {}
+	  };
 	  // target parent state
 	  // add conditional for whether or not parent component is smart otherwise throw error
 	  data.name = dom.constructor.name;
-	  data.component = true;
-	  data.state = dom.state;
+	  data.attributes.component = true;
+	  data.attributes.state = dom.state;
 	  data.children = [];
+
+	  // assign property as a flag for spy
+	  // TODO - add conditional to not add spyID if it already exists
+	  dom._instance = { _spyID: iterableId };
+	  iterableId += 1;
 
 	  // make call to another function where it will traverse through children
 	  var children = dom._reactInternalInstance._renderedComponent._renderedChildren;
@@ -23166,6 +23175,7 @@
 
 	var traverse = function traverse(child) {
 	  var childData = {
+	    attributes: {},
 	    children: []
 	  };
 	  var children = void 0;
@@ -23173,15 +23183,20 @@
 	  // set conditional for component vs not
 	  if (child.constructor.name === 'ReactCompositeComponentWrapper') {
 	    childData.name = child._currentElement.type.name;
-	    childData.component = true;
-	    childData.state = cloneDeep(child._instance.state);
-	    childData.props = cloneDeep(child._instance.props);
+	    console.log('this is child', child);
+	    child._instance._spyID = iterableId;
+	    iterableId += 1;
+
+	    childData.attributes.component = true;
+	    childData.attributes.state = cloneDeep(child._instance.state);
+	    childData.attributes.props = cloneDeep(child._instance.props);
 	    children = child._renderedComponent._renderedChildren;
 	  } else {
 	    childData.name = child._currentElement.type;
-	    childData.component = false;
-	    childData.state = null;
-	    childData.props = null;
+	    childData.attributes.component = false;
+	    childData.attributes.state = null;
+	    // To revise later
+	    childData.attributes.props = null;
 	    children = child._renderedChildren;
 	  }
 
