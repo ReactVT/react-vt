@@ -1,7 +1,14 @@
 const sinon = require('sinon'); 
 const testSpy = sinon.spy();
 
-let appName; 
+let appName;
+let tempFlag = false;
+let fakeAssert = []; 
+fakeAssert.push({'type': 'action', 'loc': ['clear'], 'event': 'click'});
+fakeAssert.push({'type': 'test', 'loc': ['board', 0, 0]})  
+
+
+
 function cloneDeep(value) {
 	if (!(value instanceof Object)) return value; 
 	const result = new value.constructor; 
@@ -11,16 +18,16 @@ function cloneDeep(value) {
 		return 'function'; 
 	} else {
 		for (let key in value) {
-		result[key] = cloneDeep(value[key]);
+      if (value[key] instanceof Object && !(value.constructor === Array)) result[key] = JSON.stringify(value[key])
+		  else result[key] = cloneDeep(value[key]);
 		}
 	}
     return result;
 }
 
 const parentTraverse = (dom) => {
-  console.log('dom root', document.getElementById('root').children[0])
   console.log('real dom', dom);
-
+  console.log('box', document.getElementById('board').children[0].children[0]);
   // This grabs the name of the top component, will be needed for when we generate enzyme test files. 
   appName = dom.constructor.name;
 
@@ -34,16 +41,16 @@ const parentTraverse = (dom) => {
   data.name = dom.constructor.name;
   data.attributes.component = true;
   data.attributes.state = dom.state;
-  data.id = [dom._reactInternalInstance._hostContainerInfo._node.id, 0]; 
+  data.attributes.id = [dom._reactInternalInstance._hostContainerInfo._node.id, 0]; 
   data.children = [];
 
   // Setting debugId of parent node to -1. Not sure if React ever uses 0. 
-  data.debugId = -1; 
+  data.attributes.debugId = -1; 
 
   // make call to another function where it will traverse through children
   const children = dom._reactInternalInstance._renderedComponent._renderedChildren;
   Object.values(children).forEach((child, index) => {
-    const address = data.id.slice(0); 
+    const address = data.attributes.id.slice(0); 
     address.push(index);
     if (child.constructor.name !== 'ReactDOMTextComponent') data.children.push(traverse(child, address));
   });
@@ -67,12 +74,12 @@ const traverse = (child, address) => {
     childData.attributes.state = cloneDeep(child._instance.state);
     childData.attributes.props = cloneDeep(child._instance.props);
     children = child._renderedComponent._renderedChildren;
-    childData.id = childData.attributes.props.id ? [childData.attributes.props.id] : address; 
+    childData.attributes.id = childData.attributes.props.id ? [childData.attributes.props.id] : address; 
   } else {
     childData.name = child._currentElement.type;
     childData.attributes.component = false;
     childData.attributes.state = null;
-    childData.id = child._currentElement.props.id ? [child._currentElement.props.id] : address; 
+    childData.attributes.id = child._currentElement.props.id ? [child._currentElement.props.id] : address; 
     // To revise later
     childData.attributes.props = null;
     children = child._renderedChildren;
@@ -82,7 +89,7 @@ const traverse = (child, address) => {
   if (children) {
       Object.values(children).forEach((child, index) => {
 
-        let newAddress = childData.id.slice(0);
+        let newAddress = childData.attributes.id.slice(0);
         newAddress.push(index);
         // Filter out all React Text Nodes
         // We may want to add the text data to the parent node on a future revision
