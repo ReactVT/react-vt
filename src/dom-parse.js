@@ -34,16 +34,16 @@ const parentTraverse = (dom) => {
   data.name = dom.constructor.name;
   data.attributes.component = true;
   data.attributes.state = dom.state;
-  data.id = [dom._reactInternalInstance._hostContainerInfo._node.id, 0]; 
+  data.attributes.id = [dom._reactInternalInstance._hostContainerInfo._node.id, 0]; 
   data.children = [];
 
   // Setting debugId of parent node to -1. Not sure if React ever uses 0. 
-  data.debugId = -1; 
+  data.attributes.debugId = -1;
 
   // make call to another function where it will traverse through children
   const children = dom._reactInternalInstance._renderedComponent._renderedChildren;
   Object.values(children).forEach((child, index) => {
-    const address = data.id.slice(0); 
+    const address = data.attributes.id.slice(0); 
     address.push(index);
     if (child.constructor.name !== 'ReactDOMTextComponent') data.children.push(traverse(child, address));
   });
@@ -59,7 +59,7 @@ const traverse = (child, address) => {
   };
   let children;
   var props;
-  childData.debugId = child._debugID; 
+  childData.attributes.debugId = child._debugID; 
   // set conditional for component vs not
   if (child.constructor.name === 'ReactCompositeComponentWrapper') {
     childData.name = child._currentElement.type.name;
@@ -67,12 +67,12 @@ const traverse = (child, address) => {
     childData.attributes.state = cloneDeep(child._instance.state);
     childData.attributes.props = cloneDeep(child._instance.props);
     children = child._renderedComponent._renderedChildren;
-    childData.id = childData.attributes.props.id ? [childData.attributes.props.id] : address; 
+    childData.attributes.id = childData.attributes.props.id ? [childData.attributes.props.id] : address; 
   } else {
     childData.name = child._currentElement.type;
     childData.attributes.component = false;
     childData.attributes.state = null;
-    childData.id = child._currentElement.props.id ? [child._currentElement.props.id] : address; 
+    childData.attributes.id = child._currentElement.props.id ? [child._currentElement.props.id] : address; 
     // To revise later
     childData.attributes.props = null;
     children = child._renderedChildren;
@@ -82,7 +82,7 @@ const traverse = (child, address) => {
   if (children) {
       Object.values(children).forEach((child, index) => {
 
-        let newAddress = childData.id.slice(0);
+        let newAddress = childData.attributes.id.slice(0);
         newAddress.push(index);
         // Filter out all React Text Nodes
         // We may want to add the text data to the parent node on a future revision
