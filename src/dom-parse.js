@@ -13,12 +13,15 @@ function cloneDeep(value) {
 	if (!(value instanceof Object)) return value; 
 	const result = new value.constructor; 
 	if (value.constructor === Array) {
-		value.forEach(item => result.push(cloneDeep(item)));
+		value.forEach(item => {
+      if (item instanceof Object && item.constructor !== Array) result.push(JSON.stringify(item)); 
+      else result.push(cloneDeep(item))
+    });
 	} else if (typeof value === 'function') {
 		return 'function'; 
 	} else {
 		for (let key in value) {
-      if (value[key] instanceof Object && !(value.constructor === Array)) result[key] = JSON.stringify(value[key])
+      if (value[key] instanceof Object && value[key].constructor !== Array) result[key] = JSON.stringify(value[key])
 		  else result[key] = cloneDeep(value[key]);
 		}
 	}
@@ -40,7 +43,7 @@ const parentTraverse = (dom) => {
   // add conditional for whether or not parent component is smart otherwise throw error
   data.name = dom.constructor.name;
   data.attributes.component = true;
-  data.attributes.state = dom.state;
+  data.attributes.state = cloneDeep(dom.state);
   data.attributes.id = [dom._reactInternalInstance._hostContainerInfo._node.id, 0]; 
   data.children = [];
 
