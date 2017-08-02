@@ -1,7 +1,14 @@
 const sinon = require('sinon'); 
 const testSpy = sinon.spy();
 
-let appName; 
+let appName;
+let tempFlag = false;
+let fakeAssert = []; 
+fakeAssert.push({'type': 'action', 'loc': ['clear'], 'event': 'click'});
+fakeAssert.push({'type': 'test', 'loc': ['board', 0, 0]})  
+
+
+
 function cloneDeep(value) {
 	if (!(value instanceof Object)) return value; 
 	const result = new value.constructor; 
@@ -11,16 +18,16 @@ function cloneDeep(value) {
 		return 'function'; 
 	} else {
 		for (let key in value) {
-		result[key] = cloneDeep(value[key]);
+      if (value[key] instanceof Object && !(value.constructor === Array)) result[key] = JSON.stringify(value[key])
+		  else result[key] = cloneDeep(value[key]);
 		}
 	}
     return result;
 }
 
 const parentTraverse = (dom) => {
-  console.log('dom root', document.getElementById('root').children[0])
   console.log('real dom', dom);
-
+  console.log('box', document.getElementById('board').children[0].children[0]);
   // This grabs the name of the top component, will be needed for when we generate enzyme test files. 
   appName = dom.constructor.name;
 
@@ -38,7 +45,9 @@ const parentTraverse = (dom) => {
   data.children = [];
 
   // Setting debugId of parent node to -1. Not sure if React ever uses 0. 
-  data.attributes.debugId = -1;
+
+  data.attributes.debugId = -1; 
+
 
   // make call to another function where it will traverse through children
   const children = dom._reactInternalInstance._renderedComponent._renderedChildren;
