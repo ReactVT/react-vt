@@ -20,7 +20,8 @@
     "react-vt": "./cli/cli.js"
   },
   "dependencies": {
-    "commander": "^2.11.0"
+    "commander": "^2.11.0",
+    "sinon": "^2.4.1"
   },
   "devDependencies": {
     "react": "^15.0.1",
