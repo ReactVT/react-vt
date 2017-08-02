@@ -23115,7 +23115,7 @@
 	    // only accept messges to self
 	    if (event.source != window) return;
 	    // filter out other messages floating around in existing context
-	    if (event.data.type === 'backgroundmsg') {
+	    if (event.data.type === 'assertion') {
 	      console.log("webpage received this from content script", event);
 	    }
 	  }, false);
@@ -23183,7 +23183,7 @@
 	  // set conditional for component vs not
 	  if (child.constructor.name === 'ReactCompositeComponentWrapper') {
 	    childData.name = child._currentElement.type.name;
-	    console.log('this is child', child);
+
 	    child._instance._spyID = iterableId;
 	    iterableId += 1;
 
