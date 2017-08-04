@@ -207,8 +207,10 @@ const traverse = (child, address) => {
     childData.component = false;
     childData.state = null;
     childData.address = child._currentElement.props.id ? [child._currentElement.props.id] : address; 
-    // To revise later
-    childData.props = null;
+    console.log('evil child!!', child);
+    var newProps = Object.assign({}, child._currentElement.props); 
+    if (newProps.children) delete newProps.children; 
+    childData.props = cloneDeep(newProps);
     children = child._renderedChildren;
   }
 
