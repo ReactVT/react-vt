@@ -21,7 +21,7 @@ function injector(React) {
     // filter out other messages floating around in existing context
     if (event.data.type === 'assertion') {
       console.log("webpage received this from content script", event);
-      domParse.addAssert(event.data.data);
+      domParse.addAssert(event.data);
     }
   }, false);
 }
