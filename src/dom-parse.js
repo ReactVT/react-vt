@@ -1,6 +1,6 @@
 const sinon = require('sinon'); 
 
-// This is not being used now, but we have are assigning it a value that we'd want to have access
+// This is not being used now, but we are assigning it a value that we'd want to have access
 // to in the future if we are making Enzyme boilerplate
 let appName;
 
@@ -30,23 +30,23 @@ function checkAssert() {
     console.log('no asserts to check');
     return; 
   }
-  
+
   // Loop through all current assertion blocks
   currentAsserts.forEach((currAssert, i) => {
 
     // Loop through the current assertion block that we are testing 
     // This can probably be refactored/cleaned up 
-    while (currAssert.length > 0) {
+    while (currAssert.asserts.length > 0) {
 
       // current becomes the first assertion
-      let current = currAssert[0];
+      let current = currAssert.asserts[0];
   
       // We hit this if we have reached an action that hasn't been set up yet
       // We add a spy on the specified node and then stop checking this assertion block
       if (current.type === 'action' && current.added === false) {
         current.added = true; 
         const spy = sinon.spy();
-        getNode(current.loc).addEventListener("click", spy);
+        getNode(current.loc).addEventListener(current.event, spy);
         current.spy = spy; 
         break; 
       }
@@ -62,22 +62,24 @@ function checkAssert() {
       // We remove the assertion from the assertion block and then we go to the next while loop cycle
       if (current.type === 'action' && current.spy.calledOnce === true) {
         console.log('spy passed');
-        currAssert.shift(); 
+        currAssert.asserts.shift(); 
         continue; 
       }
   
       // We hit this if the assertion is equal
       // In this case, we make the specified comparison and send the result back to the chrome extension
       if (current.type === 'equal') {
-        let result = nodeStore[current.loc.toString()][current.dataType][current.property]  === current.value; 
+        let result = nodeStore[current.loc.toString()][current.dataType][current.property]  === current.value;
+        var resultmessage = 'result is ' + result;
+        window.postMessage({ type: 'test-result', data: resultmessage}, "*"); 
         console.log('result is ', result); 
-        currAssert.shift();
+        currAssert.asserts.shift();
       }
     }
 
     // We hit this if we have removed all of the assertions from our assertion block
     // In that case, we remove the assertion block from our list of current assertion blocks
-    if (currAssert.length === 0) currentAsserts.splice(i,1); 
+    if (currAssert.asserts.length === 0) currentAsserts.splice(i,1); 
   });
 }
 
@@ -85,34 +87,47 @@ function checkAssert() {
 // Add assert is called from inject.js whenever an assertion message is recieved from the chrome extension
 function addAssert(freshAssert) {
   // assertBundle is the eventual assertion block that we will be adding
-  let assertBundle = [];
+  let assertBundle = {};
+  assertBundle.asserts = [];
 
   // This is a flag to determine whether we have added an action yet on this assertion block
   // We want to have the ability to see if a specific event happens more than once so we only want to have one spy set up at a time
   let actionAdded = false; 
   
-  // Loop through our fresh assert so that we can add it
-  while (freshAssert.length > 0) {
-    let newAssert = {};
-    let curr = freshAssert[0]; 
-    newAssert.loc = curr.loc;
+  // Loop through our fresh assert bundle so that we can add it to our current asserts
+  freshAssert.data.forEach(curr => {
+    // 'actions' require a special logic and need to be reconstructed before inserting
     if (curr.type === 'action') {
+        // base info for every action
+        let newAssert = {};
+        newAssert.loc = curr.loc;
         newAssert.type = 'action';
+        newAssert.event = curr.event; 
+      // This is how we will handle our first action in the assertion bundle
+      // For this one, we will add a spy  
       if (!actionAdded) {
         let spy = sinon.spy();
-        getNode(curr.loc).addEventListener("click", spy);
+        getNode(curr.loc).addEventListener(curr.event, spy);
         newAssert.spy = spy; 
         newAssert.added = true;
+
+        // Here we set our flag so that we only add one spy to this bundle at this time
         actionAdded = true;    
       } else {
+        // Any actions other than the first will get no spy and have the added property be false
         newAssert.added = false; 
       }
-    assertBundle.push(newAssert);
-    freshAssert.shift();  
+
+      // Here we add our newly made action assert to the bundle  
+    assertBundle.asserts.push(newAssert); 
     } else {
-      assertBundle.push(freshAssert.shift());
+  
+      // We just pass in an evaluation assert as is  
+      assertBundle.asserts.push(curr);
     }
-  }
+  });
+
+  // Grab our new bundle and add it our current assert queue
   currentAsserts.push(assertBundle);
 }
 
@@ -178,6 +193,7 @@ const traverse = (child, address) => {
   childData.debugId = child._debugID; 
   // set conditional for component vs not
   if (child.constructor.name === 'ReactCompositeComponentWrapper') {
+    // Parsing logic for smart React Components
     childData.name = child._currentElement.type.name;
     childData.component = true;
     childData.state = cloneDeep(child._instance.state);
@@ -185,6 +201,7 @@ const traverse = (child, address) => {
     children = child._renderedComponent._renderedChildren;
     childData.address = child._instance.props.id ? [child._instance.props.id] : address; 
   } else {
+    // Parsing logic for dumb React Components
     childData.name = child._currentElement.type;
     childData.component = false;
     childData.state = null;
@@ -193,8 +210,9 @@ const traverse = (child, address) => {
     childData.props = null;
     children = child._renderedChildren;
   }
-  let addressString = childData.address.toString();
 
+  // Store the props and state of the object on a nodeStore so that we can easily reference these for assertions
+  let addressString = childData.address.toString();
   nodeStore[addressString] = {};
   nodeStore[addressString].state = childData.state;
   nodeStore[addressString].props = childData.props; 
@@ -202,7 +220,8 @@ const traverse = (child, address) => {
   // filter out text nodes from children
   if (children) {
       Object.values(children).forEach((child, index) => {
-
+        
+        // create new Address to pass on to children in recursive call
         let newAddress = childData.address.slice(0);
         newAddress.push(index);
         // Filter out all React Text Nodes
