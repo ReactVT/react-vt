@@ -159,6 +159,7 @@ const parentTraverse = (dom) => {
   // add conditional for whether or not parent component is smart otherwise throw error
   data.name = dom.constructor.name;
   data.component = true;
+  data.props = null; 
   data.state = dom.state;
   data.address = [dom._reactInternalInstance._hostContainerInfo._node.id, 0];
   let stringAddress = data.address.toString(); 
