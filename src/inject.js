@@ -1,4 +1,4 @@
-const parentTraverse = require('./dom-parse.js');
+const domParse = require('./dom-parse.js');
 // importing React from example app
 function injector(React) {
   let traversedDom;
@@ -7,7 +7,7 @@ function injector(React) {
     console.log('state hooked');
     // set timeout to delay traverse so that it is appended to original setState
     setTimeout(()=> {
-      traversedDom = parentTraverse(this);
+      traversedDom = domParse.parentTraverse(this);
       // specify message type to target specific message
       window.postMessage({ type: 'virtualdom', data: traversedDom}, "*");
   }, 0);
@@ -21,6 +21,7 @@ function injector(React) {
     // filter out other messages floating around in existing context
     if (event.data.type === 'assertion') {
       console.log("webpage received this from content script", event);
+      domParse.addAssert(event.data.data);
     }
   }, false);
 }
