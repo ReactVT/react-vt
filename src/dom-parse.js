@@ -69,7 +69,17 @@ function checkAssert() {
       // We hit this if the assertion is equal
       // In this case, we make the specified comparison and send the result back to the chrome extension
       if (current.type === 'equal') {
-        let result = nodeStore[current.loc.toString()][current.dataType][current.property]  === current.value;
+        let result; 
+        if (current.modifier === '.length') {
+          console.log('checking length', nodeStore[current.loc.toString()][current.dataType][current.property].length);
+          console.log('current value is ', current.value);
+          result = nodeStore[current.loc.toString()][current.dataType][current.property].length == current.value;
+        } else if (current.modifier[0] === '[') {
+          let index = current.modifier.slice(1, -1);
+          result = nodeStore[current.loc.toString()][current.dataType][current.property][index]  === current.value;
+        } else { 
+          result = nodeStore[current.loc.toString()][current.dataType][current.property]  === current.value;
+        }
         var resultmessage = 'result is ' + result;
         window.postMessage({ type: 'test-result', data: resultmessage}, "*"); 
         console.log('result is ', result); 
@@ -222,14 +232,18 @@ const traverse = (child, address) => {
 
   // filter out text nodes from children
   if (children) {
+      let textNodes = 0; 
       Object.values(children).forEach((child, index) => {
-        
-        // create new Address to pass on to children in recursive call
-        let newAddress = childData.address.slice(0);
-        newAddress.push(index);
         // Filter out all React Text Nodes
         // We may want to add the text data to the parent node on a future revision
-        if (child.constructor.name !== 'ReactDOMTextComponent') childData.children.push(traverse(child, newAddress));
+        if (child.constructor.name === 'ReactDOMTextComponent') {
+          textNodes++; 
+        } else { 
+          // create new Address to pass on to children in recursive call
+          let newAddress = childData.address.slice(0);
+          newAddress.push(index - textNodes);
+          childData.children.push(traverse(child, newAddress));
+        }
       });
   }
   return childData;
