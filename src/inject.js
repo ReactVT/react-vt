@@ -1,13 +1,14 @@
 const domParse = require('./dom-parse.js');
 // importing React from example app
 function injector(React) {
+  console.log('this should display');
   let traversedDom;
   const func = React.Component.prototype.setState;
   React.Component.prototype.setState = function(...args) {
     console.log('state hooked');
     // set timeout to delay traverse so that it is appended to original setState
     setTimeout(()=> {
-      traversedDom = domParse.parentTraverse(this);
+      traversedDom = domParse.parser(this);
       // specify message type to target specific message
       window.postMessage({ type: 'virtualdom', data: traversedDom}, "*");
   }, 0);
