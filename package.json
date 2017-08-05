@@ -1,8 +1,8 @@
 {
   "name": "react-vt",
-  "version": "0.0.1",
+  "version": "0.0.5",
   "description": "A react visual testing tool",
-  "main": "index.js",
+  "main": "./src/inject.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -16,9 +16,6 @@
     "url": "https://github.com/brIAN-3/react-vt/issues"
   },
   "homepage": "https://github.com/brIAN-3/react-vt#readme",
-  "bin": {
-    "react-vt": "./cli/cli.js"
-  },
   "devDependencies": {
     "react": "^15.0.1",
     "babel-core": "^6.10.4",
