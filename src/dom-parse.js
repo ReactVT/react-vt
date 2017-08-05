@@ -157,18 +157,19 @@ function cloneDeep(value) {
     return result;
 }
 
-const parser = (dom) => {
-  if (dom.constructor.name === 'Connect') return ReduxParentTraverse(dom);
+const parser = (dom, reactDom) => {
+  if (dom.constructor.name === 'Connect') return ReduxParentTraverse(dom, reactDom);
   return ReactParentTraverse(dom);
 };
 
 
 
-const ReduxParentTraverse = (dom) => {
+const ReduxParentTraverse = (dom, reactDom) => {
+
   nodeStore = {}; 
+
   // This grabs the name of the top component, will be needed for when we generate enzyme test files. 
   appName = dom.constructor.name;
-  //console.log('state????', dom.store.getState());
 
   // Create a new data object to fill with our parsed DOM. 
   const data = {};
@@ -182,7 +183,7 @@ const ReduxParentTraverse = (dom) => {
   data.props = null; 
   // THIS WAS CHANGED
   data.state = Object.keys(dom.state).length > Object.keys(dom.store.getState()).length ? dom.state : dom.store.getState();
-  data.address = [dom._reactInternalInstance._hostContainerInfo._node.id, 0];
+  data.address = [reactDom.findDOMNode(dom).parentNode.getAttribute("id"), 0];
   let stringAddress = data.address.toString(); 
   nodeStore[stringAddress] = {};
   nodeStore[stringAddress].state = data.state;
@@ -195,8 +196,9 @@ const ReduxParentTraverse = (dom) => {
 
 
   // make call to another function where it will traverse through children
+
+  // I THINK THIS WAS CHANGED
   const children = dom._reactInternalInstance._renderedComponent._renderedComponent._renderedChildren; 
-  console.log('Parent dom', dom);
   Object.values(children).forEach((child, index) => {
     const address = data.address.slice(0); 
     address.push(index);
@@ -207,20 +209,25 @@ const ReduxParentTraverse = (dom) => {
 };
 
 const ReduxChildTraverse = (child, address) => {
-
   const childData = {
     children: [],
   };
   let children;
   var props;
   childData.debugId = child._debugID; 
+
+  console.log('find the props', child);
   // set conditional for component vs not
   if (child.constructor.name === 'ReactCompositeComponentWrapper') {
     // Parsing logic for smart React Components
     childData.name = child._currentElement.type.name;
     childData.component = true;
+
+    // THIS WAS CHANGED
+    let newProps = Object.assign({}, child._instance.props);
+    if (newProps.children) delete newProps.children; 
+    childData.props = cloneDeep(newProps);
     childData.state = cloneDeep(child._instance.state);
-    childData.props = cloneDeep(child._instance.props);
     children = child._renderedComponent._renderedChildren;
     childData.address = child._instance.props.id ? [child._instance.props.id] : address; 
   } else {
@@ -229,10 +236,12 @@ const ReduxChildTraverse = (child, address) => {
     childData.component = false;
     childData.state = null;
     childData.address = child._currentElement.props.id ? [child._currentElement.props.id] : address; 
-    console.log('evil child!!', child);
     var newProps = Object.assign({}, child._currentElement.props); 
     if (newProps.children) delete newProps.children; 
-    childData.props = cloneDeep(newProps);
+
+    // childData.props = cloneDeep(newProps);
+
+    childData.props = cloneDeep(newProps); 
     children = child._renderedChildren;
   }
 
@@ -267,7 +276,6 @@ const ReactParentTraverse = (dom) => {
   nodeStore = {}; 
   // This grabs the name of the top component, will be needed for when we generate enzyme test files. 
   appName = dom.constructor.name;
-  //console.log('state????', dom.store.getState());
 
   // Create a new data object to fill with our parsed DOM. 
   const data = {};
@@ -325,7 +333,6 @@ const ReactChildTraverse = (child, address) => {
     childData.component = false;
     childData.state = null;
     childData.address = child._currentElement.props.id ? [child._currentElement.props.id] : address; 
-    console.log('evil child!!', child);
     var newProps = Object.assign({}, child._currentElement.props); 
     if (newProps.children) delete newProps.children; 
     childData.props = cloneDeep(newProps);
