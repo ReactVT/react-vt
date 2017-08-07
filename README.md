@@ -14,13 +14,9 @@ Run npm install in your root project folder
 npm install --save-dev react-vt
 ```
 
-Import React VT in your top-level component or index.js
+Import React VT in your top-level component or index.js and use your imported React class as an argument to React VT
 ```
 import reactVT from 'react-vt';
-```
-
-Feed your imported React class as an argument to React VT
-```
 reactVT(React);
 ```
 
