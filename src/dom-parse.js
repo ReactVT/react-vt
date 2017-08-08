@@ -178,7 +178,8 @@ const ReduxParentTraverse = (dom, reactDom) => {
   // add conditional for whether or not parent component is smart otherwise throw error
 
   // THIS WAS CHANGED
-  data.name = dom._reactInternalInstance._renderedComponent._instance.constructor.name; 
+  data.name = dom._reactInternalInstance._renderedComponent._instance.constructor.name;
+  if (data.name === 'Constructor') data.name = 'Component';  
   data.component = true;
   data.props = null; 
   // THIS WAS CHANGED
@@ -221,6 +222,7 @@ const ReduxChildTraverse = (child, address) => {
   if (child.constructor.name === 'ReactCompositeComponentWrapper') {
     // Parsing logic for smart React Components
     childData.name = child._currentElement.type.name;
+
     childData.component = true;
 
     // THIS WAS CHANGED
@@ -244,6 +246,9 @@ const ReduxChildTraverse = (child, address) => {
     childData.props = cloneDeep(newProps); 
     children = child._renderedChildren;
   }
+
+  // Hack solution in case we can't figure out something better
+  if (childData.name === 'Constructor') childData.name = 'Component';  
 
   // Store the props and state of the object on a nodeStore so that we can easily reference these for assertions
   let addressString = childData.address.toString();
@@ -301,17 +306,18 @@ const ReactParentTraverse = (dom) => {
   // make call to another function where it will traverse through children
   const children = dom._reactInternalInstance._renderedComponent._renderedChildren; 
   console.log('Parent dom', dom);
-  Object.values(children).forEach((child, index) => {
-    const address = data.address.slice(0); 
-    address.push(index);
-    if (child.constructor.name !== 'ReactDOMTextComponent') data.children.push(ReactChildTraverse(child, address));
-  });
+  if (children) {
+    Object.values(children).forEach((child, index) => {
+      const address = data.address.slice(0); 
+      address.push(index);
+      if (child.constructor.name !== 'ReactDOMTextComponent') data.children.push(ReactChildTraverse(child, address));
+    });
+  }
   checkAssert(); 
   return data;
 };
 
 const ReactChildTraverse = (child, address) => {
-
   const childData = {
     children: [],
   };
@@ -324,7 +330,9 @@ const ReactChildTraverse = (child, address) => {
     childData.name = child._currentElement.type.name;
     childData.component = true;
     childData.state = cloneDeep(child._instance.state);
-    childData.props = cloneDeep(child._instance.props);
+    let newProps = child._instance.props !== null ? Object.assign({}, child._instance.props) : null; 
+    if (newProps.children) delete newProps.children; 
+    childData.props = cloneDeep(newProps);
     children = child._renderedComponent._renderedChildren;
     childData.address = child._instance.props.id ? [child._instance.props.id] : address; 
   } else {
@@ -333,7 +341,7 @@ const ReactChildTraverse = (child, address) => {
     childData.component = false;
     childData.state = null;
     childData.address = child._currentElement.props.id ? [child._currentElement.props.id] : address; 
-    var newProps = Object.assign({}, child._currentElement.props); 
+    var newProps = child._currentElement.props !== null ? Object.assign({}, child._currentElement.props) : null; 
     if (newProps.children) delete newProps.children; 
     childData.props = cloneDeep(newProps);
     children = child._renderedChildren;
