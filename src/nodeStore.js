@@ -1,4 +1,11 @@
-// Planning to add other storage objects here and have them all be keys on the export. 
-// Planning on adding a empty method to reset var and keep it in sync among files
+// This stores props and state for each node. Uses the address of the node as the key.
 
-module.exports = {};
+// Planning to add other storage objects here and have them all be keys on the export.
+let storage = {};
+
+const empty = () => storage = {};
+
+module.exports = {
+  storage,
+  empty
+};

@@ -19,7 +19,7 @@ function getNode(address) {
 // Check our current assertion blocks and run any available assertions. 
 // Runs on every state change
 function checkAssert() {
-	console.log('node', nodeStore);
+	console.log('node', nodeStore.storage);
   // For debugging purposes, should be removed prior to release
   if (currentAsserts.length === 0) {
     console.log('no asserts to check');
@@ -65,15 +65,16 @@ function checkAssert() {
       // In this case, we make the specified comparison and send the result back to the chrome extension
       if (current.type === 'equal') {
         let result; 
+        console.log('inside of equal conditional ', nodeStore.storage)
         if (current.modifier === '.length') {
-          console.log('checking length', nodeStore[current.loc.toString()][current.dataType][current.property].length);
+          console.log('checking length', nodeStore.storage[current.loc.toString()][current.dataType][current.property].length);
           console.log('current value is ', current.value);
-          result = nodeStore[current.loc.toString()][current.dataType][current.property].length == current.value;
+          result = nodeStore.storage[current.loc.toString()][current.dataType][current.property].length == current.value;
         } else if (current.modifier[0] === '[') {
           let index = current.modifier.slice(1, -1);
-          result = nodeStore[current.loc.toString()][current.dataType][current.property][index]  === current.value;
+          result = nodeStore.storage[current.loc.toString()][current.dataType][current.property][index]  === current.value;
         } else { 
-          result = nodeStore[current.loc.toString()][current.dataType][current.property]  === current.value;
+          result = nodeStore.storage[current.loc.toString()][current.dataType][current.property]  === current.value;
         }
         var resultmessage = 'result is ' + result;
         window.postMessage({ type: 'test-result', data: resultmessage}, "*"); 
@@ -137,7 +138,6 @@ function addAssert(freshAssert) {
 }
 
 module.exports = {
-  checkAssert, 
+  checkAssert,
   addAssert,
-  nodeStore
 }

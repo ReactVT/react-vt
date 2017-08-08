@@ -5,15 +5,6 @@ const nodeStore = require('./nodeStore.js');
 // to in the future if we are making Enzyme boilerplate
 let appName;
 
-
-
-// This stores props and state for each node. Uses the address of the node as the key. 
-
-
-
-
-
-
 // Creates a clone of an object/array and also clones any objects/arrays that may be nested inside of it
 function cloneDeep(value) {
   if (!(value instanceof Object)) return value; 
@@ -151,7 +142,7 @@ const ReduxChildTraverse = (child, address) => {
 
 
 const ReactParentTraverse = (dom) => {
-  //nodeStore = {}; 
+  nodeStore.empty();
   // This grabs the name of the top component, will be needed for when we generate enzyme test files. 
   appName = dom.constructor.name;
 
@@ -166,9 +157,9 @@ const ReactParentTraverse = (dom) => {
   data.state = dom.state;
   data.address = [dom._reactInternalInstance._hostContainerInfo._node.id, 0];
   let stringAddress = data.address.toString(); 
-  nodeStore[stringAddress] = {};
-  nodeStore[stringAddress].state = data.state;
-  nodeStore[stringAddress].props = {}; 
+  nodeStore.storage[stringAddress] = {};
+  nodeStore.storage[stringAddress].state = data.state;
+  nodeStore.storage[stringAddress].props = {}; 
   data.children = [];
 
   // Setting debugId of parent node to -1. Not sure if React ever uses 0. 
@@ -222,9 +213,9 @@ const ReactChildTraverse = (child, address) => {
 
   // Store the props and state of the object on a nodeStore so that we can easily reference these for assertions
   let addressString = childData.address.toString();
-  nodeStore[addressString] = {};
-  nodeStore[addressString].state = childData.state;
-  nodeStore[addressString].props = childData.props; 
+  nodeStore.storage[addressString] = {};
+  nodeStore.storage[addressString].state = childData.state;
+  nodeStore.storage[addressString].props = childData.props; 
 
   // filter out text nodes from children
   if (children) {
