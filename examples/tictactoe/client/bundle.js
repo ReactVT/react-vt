@@ -22278,12 +22278,15 @@
 	    value: function componentDidMount() {
 	      var _this2 = this;
 
-	      var self = this;
-	      setTimeout(function () {
-	        self.setState({
-	          rows: [['', '', ''], ['', '', ''], ['', '', ''], ['', '', '']]
-	        });
-	      }, 6000);
+	      // let self = this;
+	      // setTimeout(function() {
+	      //   self.setState({
+	      //   rows: [['', '', ''],
+	      //     ['', '', ''],
+	      //     ['', '', ''],
+	      //     ['', '', '']]
+	      //   });
+	      // }, 6000);
 
 	      fetchGames().then(function (gameList) {
 	        gameStore = gameList;
@@ -23141,9 +23144,6 @@
 	// to in the future if we are making Enzyme boilerplate
 	var appName = void 0;
 
-	// This stores props and state for each node. Uses the address of the node as the key. 
-
-
 	// Creates a clone of an object/array and also clones any objects/arrays that may be nested inside of it
 	function cloneDeep(value) {
 	  if (!(value instanceof Object)) return value;
@@ -23418,6 +23418,8 @@
 
 	      // current becomes the first assertion
 	      var current = currAssert.asserts[0];
+	      var valueToTest = void 0;
+	      var result = void 0;
 
 	      // We hit this if we have reached an action that hasn't been set up yet
 	      // We add a spy on the specified node and then stop checking this assertion block
@@ -23444,32 +23446,65 @@
 	        continue;
 	      }
 
+	      // Converts value to the designated type
+	      switch (current.dataType) {
+	        case 'boolean':
+	          current.value = Boolean(current.value);
+	          break;
+	        case 'number':
+	          current.value = +current.value;
+	          break;
+	        case 'null':
+	          current.value = null;
+	          break;
+	        case 'undefined':
+	          current.value = undefined;
+	          break;
+	        case 'string':
+	          break;
+	        default:
+	          console.log('Data type block failed');
+	      }
+
+	      // Check modifier field for input and determine value to test
+	      if (current.modifier === '.length') {
+	        valueToTest = nodeStore.storage[current.loc.toString()][current.source][current.property].length;
+	      } else if (current.modifier[0] === '[') {
+	        var index = current.modifier.slice(1, -1);
+	        valueToTest = nodeStore.storage[current.loc.toString()][current.source][current.property][index];
+	      } else {
+	        valueToTest = nodeStore.storage[current.loc.toString()][current.source][current.property];
+	      }
+
 	      // We hit this if the assertion is equal
 	      // In this case, we make the specified comparison and send the result back to the chrome extension
 	      if (current.type === 'equal') {
-	        var result = void 0;
-	        console.log('inside of equal conditional ', nodeStore.storage);
-	        if (current.modifier === '.length') {
-	          console.log('checking length', nodeStore.storage[current.loc.toString()][current.dataType][current.property].length);
-	          console.log('current value is ', current.value);
-	          result = nodeStore.storage[current.loc.toString()][current.dataType][current.property].length == current.value;
-	        } else if (current.modifier[0] === '[') {
-	          var index = current.modifier.slice(1, -1);
-	          result = nodeStore.storage[current.loc.toString()][current.dataType][current.property][index] === current.value;
-	        } else {
-	          result = nodeStore.storage[current.loc.toString()][current.dataType][current.property] === current.value;
-	        }
-	        var resultmessage = 'result is ' + result;
-	        window.postMessage({ type: 'test-result', data: resultmessage }, "*");
-	        console.log('result is ', result);
-	        currAssert.asserts.shift();
+	        result = valueToTest === current.value;
+	      } else if (current.type === 'greaterthan') {
+	        result = valueToTest > current.value;
+	      } else if (current.type === 'lessthan') {
+	        result = valueToTest < current.value;
 	      }
-	    }
 
+	      // // TODO : exist and notexist condition
+	      // else if (current.type === 'exist') {
+	      //   result 
+	      // } else if (current.type === 'notexist') {
+	      // }
+	      var resultmessage = 'result is ' + result;
+	      sendResult(resultmessage);
+	      console.log('result is ', result);
+	      currAssert.asserts.shift();
+	    }
 	    // We hit this if we have removed all of the assertions from our assertion block
 	    // In that case, we remove the assertion block from our list of current assertion blocks
 	    if (currAssert.asserts.length === 0) currentAsserts.splice(i, 1);
 	  });
+	}
+
+	// Send result back to chrome extension
+	function sendResult(messageObject) {
+	  window.postMessage({ type: 'test-result', data: messageObject }, "*");
 	}
 
 	// Add assert is called from inject.js whenever an assertion message is recieved from the chrome extension
@@ -36232,9 +36267,9 @@
 
 	"use strict";
 
-	// Planning to add other storage objects here and have them all be keys on the export. 
-	// Planning on adding a empty method to reset var and keep it in sync among files
+	// This stores props and state for each node. Uses the address of the node as the key.
 
+	// Planning to add other storage objects here and have them all be keys on the export.
 	var storage = {};
 
 	var empty = function empty() {

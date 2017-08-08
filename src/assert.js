@@ -32,6 +32,8 @@ function checkAssert() {
 
       // current becomes the first assertion
       let current = currAssert.asserts[0];
+      let valueToTest;
+      let result;
   
       // We hit this if we have reached an action that hasn't been set up yet
       // We add a spy on the specified node and then stop checking this assertion block
@@ -58,35 +60,68 @@ function checkAssert() {
         currAssert.asserts.shift(); 
         continue; 
       }
-  
+      
+      // Converts value to the designated type
+      switch (current.dataType) {
+        case 'boolean':
+          current.value = Boolean(current.value);
+          break;
+        case 'number':
+          current.value = +current.value;
+          break;
+        case 'null':
+          current.value = null;
+          break;
+        case 'undefined':
+          current.value = undefined;
+          break;
+        case 'string':
+          break;
+        default:
+          console.log('Data type block failed');
+      }
+
+      // Check modifier field for input and determine value to test
+      if (current.modifier === '.length') {
+        valueToTest = nodeStore.storage.address[current.loc.toString()][current.source][current.property].length;
+      } else if (current.modifier[0] === '[') {
+        let index = current.modifier.slice(1, -1);
+        valueToTest = nodeStore.storage.address[current.loc.toString()][current.source][current.property][index];
+      } else {
+        valueToTest = nodeStore.storage.address[current.loc.toString()][current.source][current.property];
+      }
+
       // We hit this if the assertion is equal
       // In this case, we make the specified comparison and send the result back to the chrome extension
       if (current.type === 'equal') {
-        let result; 
-        console.log('inside of equal conditional ', nodeStore.storage.address)
-        if (current.modifier === '.length') {
-          console.log('checking length', nodeStore.storage[current.loc.toString()][current.dataType][current.property].length);
-          console.log('current value is ', current.value);
-          result = nodeStore.storage.address[current.loc.toString()][current.dataType][current.property].length == current.value;
-        } else if (current.modifier[0] === '[') {
-          let index = current.modifier.slice(1, -1);
-          result = nodeStore.storage.address[current.loc.toString()][current.dataType][current.property][index]  === current.value;
-        } else { 
-          result = nodeStore.storage.address[current.loc.toString()][current.dataType][current.property]  === current.value;
-        }
-        var resultmessage = 'result is ' + result;
-        window.postMessage({ type: 'test-result', data: resultmessage}, "*"); 
-        console.log('result is ', result); 
-        currAssert.asserts.shift();
+        result = valueToTest === current.value;
+      } else if (current.type === 'greaterthan') {
+        result = valueToTest > current.value;
+      } else if (current.type === 'lessthan') {
+        result = valueToTest < current.value;
       }
-    }
 
+      // // TODO : exist and notexist condition
+      // else if (current.type === 'exist') {
+      //   result 
+      // } else if (current.type === 'notexist') {
+      // }
+
+      let resultmessage = 'result is ' + result;
+      sendResult(resultmessage);
+      console.log('result is ', result); 
+      currAssert.asserts.shift();
+    }
     // We hit this if we have removed all of the assertions from our assertion block
     // In that case, we remove the assertion block from our list of current assertion blocks
     if (currAssert.asserts.length === 0) currentAsserts.splice(i,1); 
   });
 }
 
+// Send result back to chrome extension
+function sendResult(messageObject) {
+  window.postMessage({ type: 'test-result', data: messageObject}, "*"); 
+}
 
 // Add assert is called from inject.js whenever an assertion message is recieved from the chrome extension
 function addAssert(freshAssert) {
