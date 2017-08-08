@@ -1,8 +1,6 @@
 const domParse = require('./dom-parse.js');
 const sinon = require('sinon'); 
 const nodeStore = require('./nodeStore.js');
-// this is only to make our fake dummy add only go once, remove asap
-let assertStore = [];  
 
 // Current asserts to check. 
 let currentAsserts = [];
@@ -19,7 +17,6 @@ function getNode(address) {
 // Check our current assertion blocks and run any available assertions. 
 // Runs on every state change
 function checkAssert() {
-	console.log('node', nodeStore.storage);
   // For debugging purposes, should be removed prior to release
   if (currentAsserts.length === 0) {
     console.log('no asserts to check');
@@ -49,6 +46,7 @@ function checkAssert() {
       // We hit this if our current assert is an action that has not happened yet
       // We stop checking this assertion block
       if (current.type === 'action' && current.spy.calledOnce === false) {
+        // Get rid of this prior to release
         console.log('spy sees nothing')
         break; 
       }

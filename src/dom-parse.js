@@ -28,6 +28,108 @@ const parser = (dom, reactDom) => {
 
 
 
+
+
+
+const ReactParentTraverse = (dom) => {
+  nodeStore.empty();
+  // This grabs the name of the top component, will be needed for when we generate enzyme test files. 
+  appName = dom.constructor.name;
+
+  // Create a new data object to fill with our parsed DOM. 
+  const data = {};
+
+  // target parent state
+  // add conditional for whether or not parent component is smart otherwise throw error
+  data.name = dom.constructor.name;
+  data.component = true;
+  data.props = null; 
+  data.state = dom.state;
+  data.address = [dom._reactInternalInstance._hostContainerInfo._node.id, 0];
+  let stringAddress = data.address.toString(); 
+  nodeStore.storage[stringAddress] = {};
+  nodeStore.storage[stringAddress].state = data.state;
+  nodeStore.storage[stringAddress].props = {}; 
+  data.children = [];
+
+  // Setting debugId of parent node to -1. Not sure if React ever uses 0. 
+
+  data.debugId = -1; 
+
+
+  // make call to another function where it will traverse through children
+  const children = dom._reactInternalInstance._renderedComponent._renderedChildren; 
+  console.log('Parent dom', dom);
+  if (children) {
+    Object.values(children).forEach((child, index) => {
+      const address = data.address.slice(0); 
+      address.push(index);
+      if (child.constructor.name !== 'ReactDOMTextComponent') data.children.push(ReactChildTraverse(child, address));
+    });
+  }
+  assert.checkAssert(); 
+  return data;
+};
+
+const ReactChildTraverse = (child, address) => {
+  const childData = {
+    children: [],
+  };
+  let children;
+  var props;
+  childData.debugId = child._debugID; 
+  // set conditional for component vs not
+  if (child.constructor.name === 'ReactCompositeComponentWrapper') {
+    // Parsing logic for smart React Components
+    childData.name = child._currentElement.type.name;
+    childData.component = true;
+    childData.state = cloneDeep(child._instance.state);
+    let newProps = child._instance.props !== null ? Object.assign({}, child._instance.props) : null; 
+    if (newProps.children) delete newProps.children; 
+    childData.props = cloneDeep(newProps);
+    children = child._renderedComponent._renderedChildren;
+    childData.address = child._instance.props.id ? [child._instance.props.id] : address; 
+  } else {
+    // Parsing logic for dumb React Components
+    childData.name = child._currentElement.type;
+    childData.component = false;
+    childData.state = null;
+    childData.address = child._currentElement.props.id ? [child._currentElement.props.id] : address; 
+    var newProps = child._currentElement.props !== null ? Object.assign({}, child._currentElement.props) : null; 
+    if (newProps.children) delete newProps.children; 
+    childData.props = cloneDeep(newProps);
+    children = child._renderedChildren;
+  }
+
+  // Store the props and state of the object on a nodeStore so that we can easily reference these for assertions
+  let addressString = childData.address.toString();
+  nodeStore.storage[addressString] = {};
+  nodeStore.storage[addressString].state = childData.state;
+  nodeStore.storage[addressString].props = childData.props; 
+
+  // filter out text nodes from children
+  if (children) {
+      let textNodes = 0; 
+      Object.values(children).forEach((child, index) => {
+        // Filter out all React Text Nodes
+        // We may want to add the text data to the parent node on a future revision
+        if (child.constructor.name === 'ReactDOMTextComponent') {
+          textNodes++; 
+        } else { 
+          // create new Address to pass on to children in recursive call
+          let newAddress = childData.address.slice(0);
+          newAddress.push(index - textNodes);
+          childData.children.push(ReactChildTraverse(child, newAddress));
+        }
+      });
+  }
+  return childData;
+};
+
+
+/////////////// REDUX LOGIC //////////////////
+
+
 const ReduxParentTraverse = (dom, reactDom) => {
 
   //nodeStore = {}; 
@@ -141,100 +243,14 @@ const ReduxChildTraverse = (child, address) => {
 
 
 
-const ReactParentTraverse = (dom) => {
-  nodeStore.empty();
-  // This grabs the name of the top component, will be needed for when we generate enzyme test files. 
-  appName = dom.constructor.name;
-
-  // Create a new data object to fill with our parsed DOM. 
-  const data = {};
-
-  // target parent state
-  // add conditional for whether or not parent component is smart otherwise throw error
-  data.name = dom.constructor.name;
-  data.component = true;
-  data.props = null; 
-  data.state = dom.state;
-  data.address = [dom._reactInternalInstance._hostContainerInfo._node.id, 0];
-  let stringAddress = data.address.toString(); 
-  nodeStore.storage[stringAddress] = {};
-  nodeStore.storage[stringAddress].state = data.state;
-  nodeStore.storage[stringAddress].props = {}; 
-  data.children = [];
-
-  // Setting debugId of parent node to -1. Not sure if React ever uses 0. 
-
-  data.debugId = -1; 
 
 
-  // make call to another function where it will traverse through children
-  const children = dom._reactInternalInstance._renderedComponent._renderedChildren; 
-  console.log('Parent dom', dom);
-  if (children) {
-    Object.values(children).forEach((child, index) => {
-      const address = data.address.slice(0); 
-      address.push(index);
-      if (child.constructor.name !== 'ReactDOMTextComponent') data.children.push(ReactChildTraverse(child, address));
-    });
-  }
-  assert.checkAssert(); 
-  return data;
-};
 
-const ReactChildTraverse = (child, address) => {
-  const childData = {
-    children: [],
-  };
-  let children;
-  var props;
-  childData.debugId = child._debugID; 
-  // set conditional for component vs not
-  if (child.constructor.name === 'ReactCompositeComponentWrapper') {
-    // Parsing logic for smart React Components
-    childData.name = child._currentElement.type.name;
-    childData.component = true;
-    childData.state = cloneDeep(child._instance.state);
-    let newProps = child._instance.props !== null ? Object.assign({}, child._instance.props) : null; 
-    if (newProps.children) delete newProps.children; 
-    childData.props = cloneDeep(newProps);
-    children = child._renderedComponent._renderedChildren;
-    childData.address = child._instance.props.id ? [child._instance.props.id] : address; 
-  } else {
-    // Parsing logic for dumb React Components
-    childData.name = child._currentElement.type;
-    childData.component = false;
-    childData.state = null;
-    childData.address = child._currentElement.props.id ? [child._currentElement.props.id] : address; 
-    var newProps = child._currentElement.props !== null ? Object.assign({}, child._currentElement.props) : null; 
-    if (newProps.children) delete newProps.children; 
-    childData.props = cloneDeep(newProps);
-    children = child._renderedChildren;
-  }
 
-  // Store the props and state of the object on a nodeStore so that we can easily reference these for assertions
-  let addressString = childData.address.toString();
-  nodeStore.storage[addressString] = {};
-  nodeStore.storage[addressString].state = childData.state;
-  nodeStore.storage[addressString].props = childData.props; 
 
-  // filter out text nodes from children
-  if (children) {
-      let textNodes = 0; 
-      Object.values(children).forEach((child, index) => {
-        // Filter out all React Text Nodes
-        // We may want to add the text data to the parent node on a future revision
-        if (child.constructor.name === 'ReactDOMTextComponent') {
-          textNodes++; 
-        } else { 
-          // create new Address to pass on to children in recursive call
-          let newAddress = childData.address.slice(0);
-          newAddress.push(index - textNodes);
-          childData.children.push(ReactChildTraverse(child, newAddress));
-        }
-      });
-  }
-  return childData;
-};
+
+
+
 
 module.exports = {
   parser
