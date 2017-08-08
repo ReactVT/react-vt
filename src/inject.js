@@ -1,4 +1,7 @@
 const domParse = require('./dom-parse.js');
+
+console.log('other parse', domParse);
+const assert = require('./assert.js');
 // importing React from example app
 function injector(React, reactDom) {
   console.log('this should display');
@@ -22,7 +25,7 @@ function injector(React, reactDom) {
     // filter out other messages floating around in existing context
     if (event.data.type === 'assertion') {
       console.log("webpage received this from content script", event);
-      domParse.addAssert(event.data);
+      assert.addAssert(event.data);
     }
   }, false);
 }
