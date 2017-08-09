@@ -26,7 +26,6 @@ const parser = (dom, reactDom) => {
   return ReactParentTraverse(dom);
 };
 
-
 const nodeStoreController = (node, name, address, props, state) => {
   nodeStore.storage.address[address] = {};
   nodeStore.storage.address[address].state = state;
@@ -34,12 +33,10 @@ const nodeStoreController = (node, name, address, props, state) => {
   if (props.id) nodeStore.storage.id[props.id] = address; 
   if (props.className) {
     if (nodeStore.storage.class[props.className]) nodeStore.storage.class[props.className].push(address)
-    else nodeStore.storage.class[props.className] = [props.className];
+    else nodeStore.storage.class[props.className] = [address];
   }
   nodeStore.storage.node[name] ? nodeStore.storage.node[name].push(address) : nodeStore.storage.node[name] = [address]; 
 }
-
-
 
 const ReactParentTraverse = (dom) => {
   nodeStore.empty();
@@ -59,7 +56,7 @@ const ReactParentTraverse = (dom) => {
   data.address = data.props.id ? [data.props.id] : [dom._reactInternalInstance._hostContainerInfo._node.id, 0];
 
   // Add necessary data to nodeStore
-  nodeStoreController(dom, data.name, data.address.toString(), data.props, data.state);
+  nodeStoreController(dom, data.name, data.address, data.props, data.state);
 
   data.children = [];
 
@@ -118,7 +115,7 @@ const ReactChildTraverse = (child, address) => {
   // nodeStore.storage.address[addressString] = {};
   // nodeStore.storage.address[addressString].state = childData.state;
   // nodeStore.storage.address[addressString].props = childData.props; 
-  nodeStoreController(child, childData.name, childData.address.toString(), childData.props, childData.state);
+  nodeStoreController(child, childData.name, childData.address, childData.props, childData.state);
 
   // filter out text nodes from children
   if (children) {
