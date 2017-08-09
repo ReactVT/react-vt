@@ -75,15 +75,15 @@ const ReactParentTraverse = (dom) => {
     });
   }
   // PUT THIS BACK
-  // assert.checkAssert();
+  assert.checkAssert();
 
   //TAKE THIS OUT
-  const dummyData = [{name: 'firstBlock', asserts: [
-    {'type': 'greaterthan', 'selector': 'component', 'selectorName': 'Row', 'selectorModifier': '.length', 'value': '2', 'dataType': 'number'},
-    {'type': 'equal', 'selector': 'id', 'selectorName': 'previousMatches', 'source': 'text', 'value': 'Previous matches', 'dataType': 'string'}
- ]}];
+//   const dummyData = [{name: 'firstBlock', asserts: [
+//     {'type': 'greaterthan', 'selector': 'component', 'selectorName': 'Row', 'selectorModifier': '.length', 'value': '2', 'dataType': 'number'},
+//     {'type': 'equal', 'selector': 'id', 'selectorName': 'previousMatches', 'source': 'text', 'value': 'Previous matches', 'dataType': 'string'}
+//  ]}];
 
-assert.checkAssert(dummyData);
+// assert.checkAssert(dummyData);
 // TAKE THIS OUT
   console.log('nodestore', nodeStore.storage); 
   return data;
