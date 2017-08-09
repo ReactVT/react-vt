@@ -29,12 +29,17 @@ function checkAssert() {
     // Loop through the current assertion block that we are testing 
     // This can probably be refactored/cleaned up 
     while (currAssert.asserts.length > 0) {
-
+      // Compose result message to be sent to chrome extension
+      const resultMessage = {
+        // TODO: this property might need to change to get assertion block name from chrome extension message
+        assertionBlock: 'currentAsserts.name placeholder',
+        assertID: 'current.assertID placeholder',
+      };
       // current becomes the first assertion
       let current = currAssert.asserts[0];
       let valueToTest;
       let result;
-  
+      
       // We hit this if we have reached an action that hasn't been set up yet
       // We add a spy on the specified node and then stop checking this assertion block
       if (current.type === 'action' && current.added === false) {
@@ -57,6 +62,12 @@ function checkAssert() {
       // We remove the assertion from the assertion block and then we go to the next while loop cycle
       if (current.type === 'action' && current.spy.calledOnce === true) {
         console.log('spy passed');
+        result = true;
+        resultMessage.result = result;
+        resultMessage.comparator = current.type;
+        sendResult(resultMessage);
+        console.log('result is ', result); 
+        console.log('result message to be sent back', resultMessage);
         currAssert.asserts.shift(); 
         continue; 
       }
@@ -100,16 +111,21 @@ function checkAssert() {
       } else if (current.type === 'lessthan') {
         result = valueToTest < current.value;
       }
-
       // // TODO : exist and notexist condition
       // else if (current.type === 'exist') {
       //   result 
       // } else if (current.type === 'notexist') {
       // }
 
-      let resultmessage = 'result is ' + result;
-      sendResult(resultmessage);
+      // Assign test result details to resultMessage
+      resultMessage.expected = current.value;
+      resultMessage.actual = valueToTest;
+      resultMessage.comparator = current.type;
+      resultMessage.result = result;
+
       console.log('result is ', result); 
+      console.log('result message to be sent back', resultMessage);
+      sendResult(resultMessage);
       currAssert.asserts.shift();
     }
     // We hit this if we have removed all of the assertions from our assertion block
