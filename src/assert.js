@@ -6,7 +6,8 @@ const nodeStore = require('./nodeStore.js');
 let currentAsserts = [];
 
 function getLocation(assertion) {
-  if (assertion.selector === 'node') return getNode(assertion.selectorName);
+  console.log('in assertion', assertion); 
+  if (assertion.selector === 'node') return nodeStore.storage.address[assertion.loc.toString()];
   if (assertion.selector === 'id') return document.getElementById(assertion.selectorName);
   if (assertion.selector === 'class') return document.getElementsByClassName(assertion.selectorName);
   if (assertion.selector === 'tag') return document.getElementsByTagName(assertion.selector);
@@ -68,7 +69,7 @@ function modifierController(modifier, data) {
 // Runs on every state change
 
 // TAKE OUT CURRENT ASSERTS FROM ARGUMENT ONCE DONE WITH DUMMY DATA
-function checkAssert(currentAsserts) {
+function checkAssert() {
   console.log('in check assert', currentAsserts)
   // For debugging purposes, should be removed prior to release
   if (currentAsserts.length === 0) {
@@ -101,10 +102,15 @@ function checkAssert(currentAsserts) {
       // current becomes the first assertion
       let result;
       let dataToTest = getLocation(current);
+      console.log('data to test', dataToTest);
       
       // Check selector modifier field for input and determine value to test
       if (current.selectorModifier) dataToTest = modifierController(current.selectorModifier, dataToTest);
       if (current.source === 'text') dataToTest = dataToTest.innerText;
+      if (current.source === 'state') dataToTest = dataToTest.state[current.property];
+      if (current.source === 'props') dataToTest = dataToTest.props[current.property];
+
+      if (current.modifier) dataToTest = modifierController(current.modifier, dataToTest); 
             
       // Converts value to the designated type
       switch (current.dataType) {
@@ -125,16 +131,6 @@ function checkAssert(currentAsserts) {
         default:
           console.log('Data type block failed');
       }
-
-      // // Check modifier field for input and determine value to test
-      // if (current.modifier === '.length') {
-      //   dataToTest = nodeStore.storage.address[current.loc.toString()][current.source][current.property].length;
-      // } else if (current.modifier[0] === '[') {
-      //   let index = current.modifier.slice(1, -1);
-      //   dataToTest = nodeStore.storage.address[current.loc.toString()][current.source][current.property][index];
-      // } else {
-      //   dataToTest = nodeStore.storage.address[current.loc.toString()][current.source][current.property];
-      // }
 
       // We hit this if the assertion is equal
       // In this case, we make the specified comparison and send the result back to the chrome extension
