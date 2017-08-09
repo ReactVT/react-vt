@@ -5,6 +5,14 @@ const nodeStore = require('./nodeStore.js');
 // Current asserts to check. 
 let currentAsserts = [];
 
+function getLocation(assertion) {
+  if (assertion.selector === 'node') return getNode(assertion.selectorName);
+  if (assertion.selector === 'id') return document.getElementById(assertion.selectorName);
+  if (assertion.selector === 'class') return document.getElementsByClassName(assertion.selectorName);
+  if (assertion.selector === 'tag') return document.getElementsByTagName(assertion.selector);
+  if (assertion.selector === 'component') return nodeStore.storage.node[assertion.selectorName];
+}
+
 // Get the actual DOM node at the supplied address and return it
 function getNode(address) {
   let result = document.getElementById(address[0]); 
@@ -14,21 +22,76 @@ function getNode(address) {
   return result; 
 }
 
+
+function actionController(current) {
+  // We hit this if we have reached an action that hasn't been set up yet
+  // We add a spy on the specified node and then stop checking this assertion block
+  if (current.added === false) {
+    current.added = true; 
+    const spy = sinon.spy();
+    getNode(current.loc).addEventListener(current.event, spy);
+    current.spy = spy; 
+    return false; 
+  }
+
+  // We hit this if our current assert is an action that has not happened yet
+  // We stop checking this assertion block
+  if (current.spy.calledOnce === false) return false;
+
+  // We hit this if our current assert is an action that has happened
+  // We remove the assertion from the assertion block and then we go to the next while loop cycle
+  if (current.spy.calledOnce === true) {
+    const resultMessage = {
+      // TODO: this property might need to change to get assertion block name from chrome extension message
+      assertionBlock: 'currentAsserts.name placeholder',
+      assertID: 'current.assertID placeholder',
+      result: true,
+      comparator: current.type,
+    };
+    sendResult(resultMessage);
+    console.log('result message to be sent back', resultMessage);
+    return true;
+  }
+
+}
+
+function modifierController(modifier, data) {
+  if (modifier === '.length') {
+    return data.length;
+  } else if (current.selectorModifier[0] === '[') {
+    let index = current.selectorModifier.slice(1, -1);
+    return data[index];
+  }
+}
+
 // Check our current assertion blocks and run any available assertions. 
 // Runs on every state change
-function checkAssert() {
+
+// TAKE OUT CURRENT ASSERTS FROM ARGUMENT ONCE DONE WITH DUMMY DATA
+function checkAssert(currentAsserts) {
+  console.log('in check assert', currentAsserts)
   // For debugging purposes, should be removed prior to release
   if (currentAsserts.length === 0) {
     console.log('no asserts to check');
-    return; 
+    return;
   }
 
   // Loop through all current assertion blocks
   currentAsserts.forEach((currAssert, i) => {
 
-    // Loop through the current assertion block that we are testing 
-    // This can probably be refactored/cleaned up 
+    // Loop through the current assertion block that we are testing
+    // This can probably be refactored/cleaned up
     while (currAssert.asserts.length > 0) {
+      let current = currAssert.asserts[0];
+      // if action
+      if (current.type === 'action') {
+        if (actionController(current)) {
+          currAssert.asserts.shift();
+          continue;
+        }
+        break;
+      }
+
       // Compose result message to be sent to chrome extension
       const resultMessage = {
         // TODO: this property might need to change to get assertion block name from chrome extension message
@@ -36,42 +99,13 @@ function checkAssert() {
         assertID: 'current.assertID placeholder',
       };
       // current becomes the first assertion
-      let current = currAssert.asserts[0];
-      let valueToTest;
       let result;
+      let dataToTest = getLocation(current);
       
-      // We hit this if we have reached an action that hasn't been set up yet
-      // We add a spy on the specified node and then stop checking this assertion block
-      if (current.type === 'action' && current.added === false) {
-        current.added = true; 
-        const spy = sinon.spy();
-        getNode(current.loc).addEventListener(current.event, spy);
-        current.spy = spy; 
-        break; 
-      }
-  
-      // We hit this if our current assert is an action that has not happened yet
-      // We stop checking this assertion block
-      if (current.type === 'action' && current.spy.calledOnce === false) {
-        // Get rid of this prior to release
-        console.log('spy sees nothing')
-        break; 
-      }
-  
-      // We hit this if our current assert is an action that has happened
-      // We remove the assertion from the assertion block and then we go to the next while loop cycle
-      if (current.type === 'action' && current.spy.calledOnce === true) {
-        console.log('spy passed');
-        result = true;
-        resultMessage.result = result;
-        resultMessage.comparator = current.type;
-        sendResult(resultMessage);
-        console.log('result is ', result); 
-        console.log('result message to be sent back', resultMessage);
-        currAssert.asserts.shift(); 
-        continue; 
-      }
-      
+      // Check selector modifier field for input and determine value to test
+      if (current.selectorModifier) dataToTest = modifierController(current.selectorModifier, dataToTest);
+      if (current.source === 'text') dataToTest = dataToTest.innerText;
+            
       // Converts value to the designated type
       switch (current.dataType) {
         case 'boolean':
@@ -92,24 +126,24 @@ function checkAssert() {
           console.log('Data type block failed');
       }
 
-      // Check modifier field for input and determine value to test
-      if (current.modifier === '.length') {
-        valueToTest = nodeStore.storage.address[current.loc.toString()][current.source][current.property].length;
-      } else if (current.modifier[0] === '[') {
-        let index = current.modifier.slice(1, -1);
-        valueToTest = nodeStore.storage.address[current.loc.toString()][current.source][current.property][index];
-      } else {
-        valueToTest = nodeStore.storage.address[current.loc.toString()][current.source][current.property];
-      }
+      // // Check modifier field for input and determine value to test
+      // if (current.modifier === '.length') {
+      //   dataToTest = nodeStore.storage.address[current.loc.toString()][current.source][current.property].length;
+      // } else if (current.modifier[0] === '[') {
+      //   let index = current.modifier.slice(1, -1);
+      //   dataToTest = nodeStore.storage.address[current.loc.toString()][current.source][current.property][index];
+      // } else {
+      //   dataToTest = nodeStore.storage.address[current.loc.toString()][current.source][current.property];
+      // }
 
       // We hit this if the assertion is equal
       // In this case, we make the specified comparison and send the result back to the chrome extension
       if (current.type === 'equal') {
-        result = valueToTest === current.value;
+        result = dataToTest === current.value;
       } else if (current.type === 'greaterthan') {
-        result = valueToTest > current.value;
+        result = dataToTest > current.value;
       } else if (current.type === 'lessthan') {
-        result = valueToTest < current.value;
+        result = dataToTest < current.value;
       }
       // // TODO : exist and notexist condition
       // else if (current.type === 'exist') {
@@ -119,7 +153,7 @@ function checkAssert() {
 
       // Assign test result details to resultMessage
       resultMessage.expected = current.value;
-      resultMessage.actual = valueToTest;
+      resultMessage.actual = dataToTest;
       resultMessage.comparator = current.type;
       resultMessage.result = result;
 
