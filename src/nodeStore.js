@@ -5,14 +5,16 @@ let storage = {
   address: {},
   id: {}, 
   class: {}, 
-  node: {} 
+  node: {}, 
+  tag: {} 
 };
 
 const empty = () => storage = {
   address: {},
   id: {}, 
   class: {}, 
-  node: {} 
+  node: {}, 
+  tag: {} 
 };
 
 module.exports = {

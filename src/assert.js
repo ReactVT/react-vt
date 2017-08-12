@@ -174,13 +174,14 @@ function addAssert(freshAssert) {
   // assertBundle is the eventual assertion block that we will be adding
   let assertBundle = {};
   assertBundle.asserts = [];
+  assertBundle.name = freshAssert.name; 
 
   // This is a flag to determine whether we have added an action yet on this assertion block
   // We want to have the ability to see if a specific event happens more than once so we only want to have one spy set up at a time
   let actionAdded = false; 
   
   // Loop through our fresh assert bundle so that we can add it to our current asserts
-  freshAssert.data.forEach(curr => {
+  freshAssert.asserts.forEach(curr => {
     // 'actions' require a special logic and need to be reconstructed before inserting
     if (curr.type === 'action') {
         // base info for every action
