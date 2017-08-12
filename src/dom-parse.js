@@ -35,12 +35,13 @@ const nodeStoreController = (node, name, address, props, state) => {
     if (nodeStore.storage.class[props.className]) nodeStore.storage.class[props.className].push(address)
     else nodeStore.storage.class[props.className] = [address];
   }
-  nodeStore.storage.node[name] ? nodeStore.storage.node[name].push(address) : nodeStore.storage.node[name] = [address]; 
+  if (node.constructor.name === 'ReactDOMComponent') nodeStore.storage.tag[name] ? nodeStore.storage.tag[name].push(address) : nodeStore.storage.tag[name] = [address];
+  else nodeStore.storage.node[name] ? nodeStore.storage.node[name].push(address) : nodeStore.storage.node[name] = [address];
+
 }
 
 const ReactParentTraverse = (dom) => {
   nodeStore.empty();
-  console.log('parent dom', dom); 
   // This grabs the name of the top component, will be needed for when we generate enzyme test files.. 
   appName = dom.constructor.name;
 
@@ -74,23 +75,12 @@ const ReactParentTraverse = (dom) => {
       if (child.constructor.name !== 'ReactDOMTextComponent') data.children.push(ReactChildTraverse(child, address));
     });
   }
-  // PUT THIS BACK
+
   assert.checkAssert();
-
-  //TAKE THIS OUT
-//   const dummyData = [{name: 'firstBlock', asserts: [
-//     {'type': 'greaterthan', 'selector': 'component', 'selectorName': 'Row', 'selectorModifier': '.length', 'value': '2', 'dataType': 'number'},
-//     {'type': 'equal', 'selector': 'id', 'selectorName': 'previousMatches', 'source': 'text', 'value': 'Previous matches', 'dataType': 'string'}
-//  ]}];
-
-// assert.checkAssert(dummyData);
-// TAKE THIS OUT
-  console.log('nodestore', nodeStore.storage); 
   return data;
 };
 
 const ReactChildTraverse = (child, address) => {
-  //console.log('child is', child);
   const childData = {
     children: [],
   };
