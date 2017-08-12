@@ -26,17 +26,26 @@ const parser = (dom, reactDom) => {
   return ReactParentTraverse(dom);
 };
 
-const nodeStoreController = (node, name, address, props, state) => {
+const nodeStoreController = (node, name, address, props, state, parent = false) => {
   nodeStore.storage.address[address] = {};
   nodeStore.storage.address[address].state = state;
   nodeStore.storage.address[address].props = props;
   if (props.id) nodeStore.storage.id[props.id] = address; 
-  if (props.className) {
+  if (props.className && node.constructor.name === 'ReactDOMComponent') {
     if (nodeStore.storage.class[props.className]) nodeStore.storage.class[props.className].push(address)
     else nodeStore.storage.class[props.className] = [address];
   }
   if (node.constructor.name === 'ReactDOMComponent') nodeStore.storage.tag[name] ? nodeStore.storage.tag[name].push(address) : nodeStore.storage.tag[name] = [address];
-  else nodeStore.storage.node[name] ? nodeStore.storage.node[name].push(address) : nodeStore.storage.node[name] = [address];
+  else {
+    nodeStore.storage.node[name] ? nodeStore.storage.node[name].push(address) : nodeStore.storage.node[name] = [address];
+    if (!parent && node._renderedComponent._hostNode.className) {
+      const classArr = node._renderedComponent._hostNode.className.split(/\s+/);
+      classArr.forEach(item => {
+        if (nodeStore.storage.class[item]) nodeStore.storage.class[item].push(address)
+        else nodeStore.storage.class[item] = [address];
+      })
+    }
+  }
 
 }
 
@@ -57,7 +66,7 @@ const ReactParentTraverse = (dom) => {
   data.address = data.props.id ? [data.props.id] : [dom._reactInternalInstance._hostContainerInfo._node.id, 0];
 
   // Add necessary data to nodeStore
-  nodeStoreController(dom, data.name, data.address, data.props, data.state);
+  nodeStoreController(dom, data.name, data.address, data.props, data.state, true);
 
   data.children = [];
 
@@ -81,6 +90,7 @@ const ReactParentTraverse = (dom) => {
 };
 
 const ReactChildTraverse = (child, address) => {
+  console.log('child!!!!', child);
   const childData = {
     children: [],
   };
