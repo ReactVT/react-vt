@@ -1,20 +1,15 @@
 const domParse = require('./dom-parse.js');
+const nodeStore = require('./nodeStore.js');
 
-console.log('other parse', domParse);
 const assert = require('./assert.js');
+const throttledParse = throttle(domParse.parser, 50);
+
 // importing React from example app
 function injector(React, reactDom) {
-  console.log('this should display');
-  let traversedDom;
   const func = React.Component.prototype.setState;
-  React.Component.prototype.setState = function(...args) {
-    console.log('state hooked');
+  React.Component.prototype.setState = function(...args) {    
     // set timeout to delay traverse so that it is appended to original setState
-    setTimeout(()=> {
-      traversedDom = domParse.parser(this, reactDom);
-      // specify message type to target specific message
-      window.postMessage({ type: 'virtualdom', data: traversedDom}, "*");
-  }, 0);
+    startTraverse(this, reactDom);
     return func.apply(this, args);
   }
 
@@ -23,11 +18,34 @@ function injector(React, reactDom) {
     // only accept messges to self
     if (event.source != window) return;
     // filter out other messages floating around in existing context
+    if (event.data.type === 'onLoad') {
+
+    }
     if (event.data.type === 'assertion') {
-      console.log("webpage received this from content script", event);
-      assert.addAssert(event.data);
+      console.log("webpage received this from content script", event.data.message);
+      assert.addAssert(event.data.message);
     }
   }, false);
+}
+
+function startTraverse(self, reactDom) {
+  const nodePackage = {}; 
+  setTimeout(()=> {
+      nodePackage.virtualDom = throttledParse(self, reactDom);
+      nodePackage.nodeStore = nodeStore.storage;
+      // specify message type to target specific message
+      window.postMessage({ type: 'virtualdom', data: nodePackage}, "*");
+  }, 0);
+}
+
+function throttle(func, wait) {
+ let waiting = false; 
+ return function throttler(...args) {
+   if (waiting) return; 
+   waiting = true; 
+   setTimeout(() => waiting = false, wait);
+   return func(...args);
+ }
 }
 
 module.exports = injector;
