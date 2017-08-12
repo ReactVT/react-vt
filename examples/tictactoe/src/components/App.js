@@ -55,15 +55,15 @@ class App extends Component {
   }
 
   componentDidMount() {
-    let self = this;
-    setTimeout(function() {
-      self.setState({
-      rows: [['', '', ''],
-        ['', '', ''],
-        ['', '', ''],
-        ['', '', '']]
-      });
-    }, 6000);
+    // let self = this;
+    // setTimeout(function() {
+    //   self.setState({
+    //   rows: [['', '', ''],
+    //     ['', '', ''],
+    //     ['', '', ''],
+    //     ['', '', '']]
+    //   });
+    // }, 6000);
 
     fetchGames()
       .then(gameList => {

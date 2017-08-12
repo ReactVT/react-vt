@@ -56,7 +56,7 @@
 
 	var _App2 = _interopRequireDefault(_App);
 
-	var _application = __webpack_require__(252);
+	var _application = __webpack_require__(254);
 
 	var _application2 = _interopRequireDefault(_application);
 
@@ -22278,12 +22278,15 @@
 	    value: function componentDidMount() {
 	      var _this2 = this;
 
-	      var self = this;
-	      setTimeout(function () {
-	        self.setState({
-	          rows: [['', '', ''], ['', '', ''], ['', '', ''], ['', '', '']]
-	        });
-	      }, 6000);
+	      // let self = this;
+	      // setTimeout(function() {
+	      //   self.setState({
+	      //   rows: [['', '', ''],
+	      //     ['', '', ''],
+	      //     ['', '', ''],
+	      //     ['', '', '']]
+	      //   });
+	      // }, 6000);
 
 	      fetchGames().then(function (gameList) {
 	        gameStore = gameList;
@@ -23087,9 +23090,13 @@
 
 	'use strict';
 
-	var parentTraverse = __webpack_require__(191);
+	var domParse = __webpack_require__(191);
+
+	console.log('other parse', domParse);
+	var assert = __webpack_require__(192);
 	// importing React from example app
-	function injector(React) {
+	function injector(React, reactDom) {
+	  console.log('this should display');
 	  var traversedDom = void 0;
 	  var func = React.Component.prototype.setState;
 	  React.Component.prototype.setState = function () {
@@ -23098,7 +23105,7 @@
 	    console.log('state hooked');
 	    // set timeout to delay traverse so that it is appended to original setState
 	    setTimeout(function () {
-	      traversedDom = parentTraverse(_this);
+	      traversedDom = domParse.parser(_this, reactDom);
 	      // specify message type to target specific message
 	      window.postMessage({ type: 'virtualdom', data: traversedDom }, "*");
 	    }, 0);
@@ -23117,6 +23124,7 @@
 	    // filter out other messages floating around in existing context
 	    if (event.data.type === 'assertion') {
 	      console.log("webpage received this from content script", event);
+	      assert.addAssert(event.data);
 	    }
 	  }, false);
 	}
@@ -23129,10 +23137,14 @@
 
 	'use strict';
 
-	var sinon = __webpack_require__(192);
-	var testSpy = sinon.spy();
+	var assert = __webpack_require__(192);
+	var nodeStore = __webpack_require__(253);
 
+	// This is not being used now, but we are assigning it a value that we'd want to have access
+	// to in the future if we are making Enzyme boilerplate
 	var appName = void 0;
+
+	// Creates a clone of an object/array and also clones any objects/arrays that may be nested inside of it
 	function cloneDeep(value) {
 	  if (!(value instanceof Object)) return value;
 	  var result = new value.constructor();
@@ -23150,92 +23162,412 @@
 	  return result;
 	}
 
-	var parentTraverse = function parentTraverse(dom) {
-	  console.log('dom root', document.getElementById('root').children[0]);
-	  console.log('real dom', dom);
+	var parser = function parser(dom, reactDom) {
+	  if (dom.constructor.name === 'Connect') return ReduxParentTraverse(dom, reactDom);
+	  return ReactParentTraverse(dom);
+	};
+
+	var ReduxParentTraverse = function ReduxParentTraverse(dom, reactDom) {
+
+	  //nodeStore = {}; 
 
 	  // This grabs the name of the top component, will be needed for when we generate enzyme test files. 
 	  appName = dom.constructor.name;
 
 	  // Create a new data object to fill with our parsed DOM. 
-	  var data = {
-	    attributes: {}
-	  };
+	  var data = {};
 
 	  // target parent state
 	  // add conditional for whether or not parent component is smart otherwise throw error
-	  data.name = dom.constructor.name;
-	  data.attributes.component = true;
-	  data.attributes.state = dom.state;
-	  data.attributes.id = [dom._reactInternalInstance._hostContainerInfo._node.id, 0];
+
+	  // THIS WAS CHANGED
+	  data.name = dom._reactInternalInstance._renderedComponent._instance.constructor.name;
+	  if (data.name === 'Constructor') data.name = 'Component';
+	  data.component = true;
+	  data.props = null;
+	  // THIS WAS CHANGED
+	  data.state = Object.keys(dom.state).length > Object.keys(dom.store.getState()).length ? dom.state : dom.store.getState();
+	  data.address = [reactDom.findDOMNode(dom).parentNode.getAttribute("id"), 0];
+	  var stringAddress = data.address.toString();
+	  nodeStore[stringAddress] = {};
+	  nodeStore[stringAddress].state = data.state;
+	  nodeStore[stringAddress].props = {};
 	  data.children = [];
 
 	  // Setting debugId of parent node to -1. Not sure if React ever uses 0. 
-	  data.attributes.debugId = -1;
+
+	  data.debugId = -1;
 
 	  // make call to another function where it will traverse through children
-	  var children = dom._reactInternalInstance._renderedComponent._renderedChildren;
+
+	  // I THINK THIS WAS CHANGED
+	  var children = dom._reactInternalInstance._renderedComponent._renderedComponent._renderedChildren;
 	  Object.values(children).forEach(function (child, index) {
-	    var address = data.attributes.id.slice(0);
+	    var address = data.address.slice(0);
 	    address.push(index);
-	    if (child.constructor.name !== 'ReactDOMTextComponent') data.children.push(traverse(child, address));
+	    if (child.constructor.name !== 'ReactDOMTextComponent') data.children.push(ReduxChildTraverse(child, address));
 	  });
-	  console.log('PARSED DATA', data);
+	  assert.checkAssert();
 	  return data;
 	};
 
-	var traverse = function traverse(child, address) {
-
+	var ReduxChildTraverse = function ReduxChildTraverse(child, address) {
 	  var childData = {
-	    attributes: {},
 	    children: []
 	  };
 	  var children = void 0;
 	  var props;
-	  childData.attributes.debugId = child._debugID;
+	  childData.debugId = child._debugID;
+
+	  console.log('find the props', child);
 	  // set conditional for component vs not
 	  if (child.constructor.name === 'ReactCompositeComponentWrapper') {
+	    // Parsing logic for smart React Components
 	    childData.name = child._currentElement.type.name;
-	    childData.attributes.component = true;
-	    childData.attributes.state = cloneDeep(child._instance.state);
-	    childData.attributes.props = cloneDeep(child._instance.props);
+
+	    childData.component = true;
+
+	    // THIS WAS CHANGED
+	    var _newProps = Object.assign({}, child._instance.props);
+	    if (_newProps.children) delete _newProps.children;
+	    childData.props = cloneDeep(_newProps);
+	    childData.state = cloneDeep(child._instance.state);
 	    children = child._renderedComponent._renderedChildren;
-	    childData.attributes.id = childData.attributes.props.id ? [childData.attributes.props.id] : address;
+	    childData.address = child._instance.props.id ? [child._instance.props.id] : address;
 	  } else {
+	    // Parsing logic for dumb React Components
 	    childData.name = child._currentElement.type;
-	    childData.attributes.component = false;
-	    childData.attributes.state = null;
-	    childData.attributes.id = child._currentElement.props.id ? [child._currentElement.props.id] : address;
-	    // To revise later
-	    childData.attributes.props = null;
+	    childData.component = false;
+	    childData.state = null;
+	    childData.address = child._currentElement.props.id ? [child._currentElement.props.id] : address;
+	    var newProps = Object.assign({}, child._currentElement.props);
+	    if (newProps.children) delete newProps.children;
+
+	    // childData.props = cloneDeep(newProps);
+
+	    childData.props = cloneDeep(newProps);
 	    children = child._renderedChildren;
 	  }
 
+	  // Hack solution in case we can't figure out something better
+	  if (childData.name === 'Constructor') childData.name = 'Component';
+
+	  // Store the props and state of the object on a nodeStore so that we can easily reference these for assertions
+	  var addressString = childData.address.toString();
+	  nodeStore[addressString] = {};
+	  nodeStore[addressString].state = childData.state;
+	  nodeStore[addressString].props = childData.props;
+
 	  // filter out text nodes from children
 	  if (children) {
+	    var textNodes = 0;
 	    Object.values(children).forEach(function (child, index) {
-
-	      var newAddress = childData.attributes.id.slice(0);
-	      newAddress.push(index);
 	      // Filter out all React Text Nodes
 	      // We may want to add the text data to the parent node on a future revision
-	      if (child.constructor.name !== 'ReactDOMTextComponent') childData.children.push(traverse(child, newAddress));
+	      if (child.constructor.name === 'ReactDOMTextComponent') {
+	        textNodes++;
+	      } else {
+	        // create new Address to pass on to children in recursive call
+	        var newAddress = childData.address.slice(0);
+	        newAddress.push(index - textNodes);
+	        childData.children.push(ReduxChildTraverse(child, newAddress));
+	      }
 	    });
 	  }
 	  return childData;
 	};
 
-	module.exports = parentTraverse;
+	var ReactParentTraverse = function ReactParentTraverse(dom) {
+	  nodeStore.empty();
+	  // This grabs the name of the top component, will be needed for when we generate enzyme test files. 
+	  appName = dom.constructor.name;
+
+	  // Create a new data object to fill with our parsed DOM. 
+	  var data = {};
+
+	  // target parent state
+	  // add conditional for whether or not parent component is smart otherwise throw error
+	  data.name = dom.constructor.name;
+	  data.component = true;
+	  data.props = null;
+	  data.state = dom.state;
+	  data.address = [dom._reactInternalInstance._hostContainerInfo._node.id, 0];
+	  var stringAddress = data.address.toString();
+	  nodeStore.storage[stringAddress] = {};
+	  nodeStore.storage[stringAddress].state = data.state;
+	  nodeStore.storage[stringAddress].props = {};
+	  data.children = [];
+
+	  // Setting debugId of parent node to -1. Not sure if React ever uses 0. 
+
+	  data.debugId = -1;
+
+	  // make call to another function where it will traverse through children
+	  var children = dom._reactInternalInstance._renderedComponent._renderedChildren;
+	  console.log('Parent dom', dom);
+	  if (children) {
+	    Object.values(children).forEach(function (child, index) {
+	      var address = data.address.slice(0);
+	      address.push(index);
+	      if (child.constructor.name !== 'ReactDOMTextComponent') data.children.push(ReactChildTraverse(child, address));
+	    });
+	  }
+	  assert.checkAssert();
+	  return data;
+	};
+
+	var ReactChildTraverse = function ReactChildTraverse(child, address) {
+	  var childData = {
+	    children: []
+	  };
+	  var children = void 0;
+	  var props;
+	  childData.debugId = child._debugID;
+	  // set conditional for component vs not
+	  if (child.constructor.name === 'ReactCompositeComponentWrapper') {
+	    // Parsing logic for smart React Components
+	    childData.name = child._currentElement.type.name;
+	    childData.component = true;
+	    childData.state = cloneDeep(child._instance.state);
+	    var _newProps2 = child._instance.props !== null ? Object.assign({}, child._instance.props) : null;
+	    if (_newProps2.children) delete _newProps2.children;
+	    childData.props = cloneDeep(_newProps2);
+	    children = child._renderedComponent._renderedChildren;
+	    childData.address = child._instance.props.id ? [child._instance.props.id] : address;
+	  } else {
+	    // Parsing logic for dumb React Components
+	    childData.name = child._currentElement.type;
+	    childData.component = false;
+	    childData.state = null;
+	    childData.address = child._currentElement.props.id ? [child._currentElement.props.id] : address;
+	    var newProps = child._currentElement.props !== null ? Object.assign({}, child._currentElement.props) : null;
+	    if (newProps.children) delete newProps.children;
+	    childData.props = cloneDeep(newProps);
+	    children = child._renderedChildren;
+	  }
+
+	  // Store the props and state of the object on a nodeStore so that we can easily reference these for assertions
+	  var addressString = childData.address.toString();
+	  nodeStore.storage[addressString] = {};
+	  nodeStore.storage[addressString].state = childData.state;
+	  nodeStore.storage[addressString].props = childData.props;
+
+	  // filter out text nodes from children
+	  if (children) {
+	    var textNodes = 0;
+	    Object.values(children).forEach(function (child, index) {
+	      // Filter out all React Text Nodes
+	      // We may want to add the text data to the parent node on a future revision
+	      if (child.constructor.name === 'ReactDOMTextComponent') {
+	        textNodes++;
+	      } else {
+	        // create new Address to pass on to children in recursive call
+	        var newAddress = childData.address.slice(0);
+	        newAddress.push(index - textNodes);
+	        childData.children.push(ReactChildTraverse(child, newAddress));
+	      }
+	    });
+	  }
+	  return childData;
+	};
+
+	module.exports = {
+	  parser: parser
+	};
 
 /***/ }),
 /* 192 */
 /***/ (function(module, exports, __webpack_require__) {
 
+	'use strict';
+
+	var domParse = __webpack_require__(191);
+	var sinon = __webpack_require__(193);
+	var nodeStore = __webpack_require__(253);
+	// this is only to make our fake dummy add only go once, remove asap
+	var assertStore = [];
+
+	// Current asserts to check. 
+	var currentAsserts = [];
+
+	// Get the actual DOM node at the supplied address and return it
+	function getNode(address) {
+	  var result = document.getElementById(address[0]);
+	  for (var i = 1; i < address.length; i++) {
+	    result = result.children[address[i]];
+	  }
+	  return result;
+	}
+
+	// Check our current assertion blocks and run any available assertions. 
+	// Runs on every state change
+	function checkAssert() {
+	  console.log('node', nodeStore.storage);
+	  // For debugging purposes, should be removed prior to release
+	  if (currentAsserts.length === 0) {
+	    console.log('no asserts to check');
+	    return;
+	  }
+
+	  // Loop through all current assertion blocks
+	  currentAsserts.forEach(function (currAssert, i) {
+
+	    // Loop through the current assertion block that we are testing 
+	    // This can probably be refactored/cleaned up 
+	    while (currAssert.asserts.length > 0) {
+
+	      // current becomes the first assertion
+	      var current = currAssert.asserts[0];
+	      var valueToTest = void 0;
+	      var result = void 0;
+
+	      // We hit this if we have reached an action that hasn't been set up yet
+	      // We add a spy on the specified node and then stop checking this assertion block
+	      if (current.type === 'action' && current.added === false) {
+	        current.added = true;
+	        var spy = sinon.spy();
+	        getNode(current.loc).addEventListener(current.event, spy);
+	        current.spy = spy;
+	        break;
+	      }
+
+	      // We hit this if our current assert is an action that has not happened yet
+	      // We stop checking this assertion block
+	      if (current.type === 'action' && current.spy.calledOnce === false) {
+	        console.log('spy sees nothing');
+	        break;
+	      }
+
+	      // We hit this if our current assert is an action that has happened
+	      // We remove the assertion from the assertion block and then we go to the next while loop cycle
+	      if (current.type === 'action' && current.spy.calledOnce === true) {
+	        console.log('spy passed');
+	        currAssert.asserts.shift();
+	        continue;
+	      }
+
+	      // Converts value to the designated type
+	      switch (current.dataType) {
+	        case 'boolean':
+	          current.value = Boolean(current.value);
+	          break;
+	        case 'number':
+	          current.value = +current.value;
+	          break;
+	        case 'null':
+	          current.value = null;
+	          break;
+	        case 'undefined':
+	          current.value = undefined;
+	          break;
+	        case 'string':
+	          break;
+	        default:
+	          console.log('Data type block failed');
+	      }
+
+	      // Check modifier field for input and determine value to test
+	      if (current.modifier === '.length') {
+	        valueToTest = nodeStore.storage[current.loc.toString()][current.source][current.property].length;
+	      } else if (current.modifier[0] === '[') {
+	        var index = current.modifier.slice(1, -1);
+	        valueToTest = nodeStore.storage[current.loc.toString()][current.source][current.property][index];
+	      } else {
+	        valueToTest = nodeStore.storage[current.loc.toString()][current.source][current.property];
+	      }
+
+	      // We hit this if the assertion is equal
+	      // In this case, we make the specified comparison and send the result back to the chrome extension
+	      if (current.type === 'equal') {
+	        result = valueToTest === current.value;
+	      } else if (current.type === 'greaterthan') {
+	        result = valueToTest > current.value;
+	      } else if (current.type === 'lessthan') {
+	        result = valueToTest < current.value;
+	      }
+
+	      // // TODO : exist and notexist condition
+	      // else if (current.type === 'exist') {
+	      //   result 
+	      // } else if (current.type === 'notexist') {
+	      // }
+	      var resultmessage = 'result is ' + result;
+	      sendResult(resultmessage);
+	      console.log('result is ', result);
+	      currAssert.asserts.shift();
+	    }
+	    // We hit this if we have removed all of the assertions from our assertion block
+	    // In that case, we remove the assertion block from our list of current assertion blocks
+	    if (currAssert.asserts.length === 0) currentAsserts.splice(i, 1);
+	  });
+	}
+
+	// Send result back to chrome extension
+	function sendResult(messageObject) {
+	  window.postMessage({ type: 'test-result', data: messageObject }, "*");
+	}
+
+	// Add assert is called from inject.js whenever an assertion message is recieved from the chrome extension
+	function addAssert(freshAssert) {
+	  // assertBundle is the eventual assertion block that we will be adding
+	  var assertBundle = {};
+	  assertBundle.asserts = [];
+
+	  // This is a flag to determine whether we have added an action yet on this assertion block
+	  // We want to have the ability to see if a specific event happens more than once so we only want to have one spy set up at a time
+	  var actionAdded = false;
+
+	  // Loop through our fresh assert bundle so that we can add it to our current asserts
+	  freshAssert.data.forEach(function (curr) {
+	    // 'actions' require a special logic and need to be reconstructed before inserting
+	    if (curr.type === 'action') {
+	      // base info for every action
+	      var newAssert = {};
+	      newAssert.loc = curr.loc;
+	      newAssert.type = 'action';
+	      newAssert.event = curr.event;
+	      // This is how we will handle our first action in the assertion bundle
+	      // For this one, we will add a spy  
+	      if (!actionAdded) {
+	        var spy = sinon.spy();
+	        getNode(curr.loc).addEventListener(curr.event, spy);
+	        newAssert.spy = spy;
+	        newAssert.added = true;
+
+	        // Here we set our flag so that we only add one spy to this bundle at this time
+	        actionAdded = true;
+	      } else {
+	        // Any actions other than the first will get no spy and have the added property be false
+	        newAssert.added = false;
+	      }
+
+	      // Here we add our newly made action assert to the bundle  
+	      assertBundle.asserts.push(newAssert);
+	    } else {
+
+	      // We just pass in an evaluation assert as is  
+	      assertBundle.asserts.push(curr);
+	    }
+	  });
+
+	  // Grab our new bundle and add it our current assert queue
+	  currentAsserts.push(assertBundle);
+	}
+
+	module.exports = {
+	  checkAssert: checkAssert,
+	  addAssert: addAssert
+	};
+
+/***/ }),
+/* 193 */
+/***/ (function(module, exports, __webpack_require__) {
+
 	"use strict";
 
-	var match = __webpack_require__(193);
-	var deepEqual = __webpack_require__(194);
-	var deprecated = __webpack_require__(201);
+	var match = __webpack_require__(194);
+	var deepEqual = __webpack_require__(195);
+	var deprecated = __webpack_require__(202);
 
 	function exposeCoreUtils(target, utils) {
 	    var keys = Object.keys(utils);
@@ -23264,40 +23596,40 @@
 	}
 
 	// Expose internal utilities on `sinon` global for backwards compatibility.
-	exposeCoreUtils(exports, __webpack_require__(202));
+	exposeCoreUtils(exports, __webpack_require__(203));
 
-	exports.assert = __webpack_require__(219);
-	exports.collection = __webpack_require__(220);
+	exports.assert = __webpack_require__(220);
+	exports.collection = __webpack_require__(221);
 	exports.match = match;
-	exports.spy = __webpack_require__(221);
-	exports.spyCall = __webpack_require__(225);
-	exports.stub = __webpack_require__(229);
-	exports.mock = __webpack_require__(234);
-	exports.sandbox = __webpack_require__(239);
-	exports.expectation = __webpack_require__(235);
-	exports.createStubInstance = __webpack_require__(229).createStubInstance;
+	exports.spy = __webpack_require__(222);
+	exports.spyCall = __webpack_require__(226);
+	exports.stub = __webpack_require__(230);
+	exports.mock = __webpack_require__(235);
+	exports.sandbox = __webpack_require__(240);
+	exports.expectation = __webpack_require__(236);
+	exports.createStubInstance = __webpack_require__(230).createStubInstance;
 
-	var fakeTimers = __webpack_require__(240);
+	var fakeTimers = __webpack_require__(241);
 	exports.useFakeTimers = fakeTimers.useFakeTimers;
 	exports.clock = fakeTimers.clock;
 	exports.timers = fakeTimers.timers;
 
-	var event = __webpack_require__(247);
+	var event = __webpack_require__(248);
 	exports.Event = deprecated.wrap(event.Event, deprecated.defaultMsg("Event"));
 	exports.CustomEvent = deprecated.wrap(event.CustomEvent, deprecated.defaultMsg("CustomEvent"));
 	exports.ProgressEvent = deprecated.wrap(event.ProgressEvent, deprecated.defaultMsg("ProgressEvent"));
 	exports.EventTarget = {};
 	exposeEventTarget(exports.EventTarget, event.EventTarget);
 
-	var fakeXhr = __webpack_require__(243);
+	var fakeXhr = __webpack_require__(244);
 	exports.xhr = fakeXhr.xhr;
 	exports.FakeXMLHttpRequest = fakeXhr.FakeXMLHttpRequest;
 	exports.useFakeXMLHttpRequest = fakeXhr.useFakeXMLHttpRequest;
 
-	exports.fakeServer = __webpack_require__(242);
-	exports.fakeServerWithClock = __webpack_require__(251);
+	exports.fakeServer = __webpack_require__(243);
+	exports.fakeServerWithClock = __webpack_require__(252);
 
-	var behavior = __webpack_require__(222);
+	var behavior = __webpack_require__(223);
 
 	exports.addBehavior = function (name, fn) {
 	    behavior.addBehavior(exports.stub, name, fn);
@@ -23305,17 +23637,17 @@
 
 
 /***/ }),
-/* 193 */
+/* 194 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var deepEqual = __webpack_require__(194).use(match); // eslint-disable-line no-use-before-define
-	var every = __webpack_require__(195);
-	var functionName = __webpack_require__(196);
-	var iterableToString = __webpack_require__(197);
-	var typeOf = __webpack_require__(198);
-	var valueToString = __webpack_require__(200);
+	var deepEqual = __webpack_require__(195).use(match); // eslint-disable-line no-use-before-define
+	var every = __webpack_require__(196);
+	var functionName = __webpack_require__(197);
+	var iterableToString = __webpack_require__(198);
+	var typeOf = __webpack_require__(199);
+	var valueToString = __webpack_require__(201);
 
 	var indexOf = Array.prototype.indexOf;
 
@@ -23617,7 +23949,7 @@
 
 
 /***/ }),
-/* 194 */
+/* 195 */
 /***/ (function(module, exports) {
 
 	"use strict";
@@ -23736,7 +24068,7 @@
 
 
 /***/ }),
-/* 195 */
+/* 196 */
 /***/ (function(module, exports) {
 
 	"use strict";
@@ -23761,7 +24093,7 @@
 
 
 /***/ }),
-/* 196 */
+/* 197 */
 /***/ (function(module, exports) {
 
 	"use strict";
@@ -23784,11 +24116,11 @@
 
 
 /***/ }),
-/* 197 */
+/* 198 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var typeOf = __webpack_require__(198);
+	var typeOf = __webpack_require__(199);
 
 	module.exports = function iterableToString(obj) {
 	    var representation = "";
@@ -23824,12 +24156,12 @@
 
 
 /***/ }),
-/* 198 */
+/* 199 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var type = __webpack_require__(199);
+	var type = __webpack_require__(200);
 
 	module.exports = function typeOf(value) {
 	    return type(value).toLowerCase();
@@ -23837,7 +24169,7 @@
 
 
 /***/ }),
-/* 199 */
+/* 200 */
 /***/ (function(module, exports) {
 
 	/* WEBPACK VAR INJECTION */(function(global) {'use strict';
@@ -24214,7 +24546,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ }),
-/* 200 */
+/* 201 */
 /***/ (function(module, exports) {
 
 	"use strict";
@@ -24228,7 +24560,7 @@
 
 
 /***/ }),
-/* 201 */
+/* 202 */
 /***/ (function(module, exports) {
 
 	/*eslint no-console: 0 */
@@ -24266,35 +24598,35 @@
 
 
 /***/ }),
-/* 202 */
+/* 203 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 
 	module.exports = {
-	    calledInOrder: __webpack_require__(203),
-	    configureLogError: __webpack_require__(204),
-	    defaultConfig: __webpack_require__(205),
-	    deepEqual: __webpack_require__(194),
-	    every: __webpack_require__(195),
-	    extend: __webpack_require__(206),
-	    format: __webpack_require__(207),
-	    functionName: __webpack_require__(196),
-	    functionToString: __webpack_require__(211),
-	    getConfig: __webpack_require__(212),
-	    getPropertyDescriptor: __webpack_require__(213),
-	    iterableToString: __webpack_require__(197),
-	    orderByFirstCall: __webpack_require__(214),
-	    restore: __webpack_require__(215),
-	    timesInWords: __webpack_require__(217),
-	    typeOf: __webpack_require__(198),
-	    walk: __webpack_require__(216),
-	    wrapMethod: __webpack_require__(218)
+	    calledInOrder: __webpack_require__(204),
+	    configureLogError: __webpack_require__(205),
+	    defaultConfig: __webpack_require__(206),
+	    deepEqual: __webpack_require__(195),
+	    every: __webpack_require__(196),
+	    extend: __webpack_require__(207),
+	    format: __webpack_require__(208),
+	    functionName: __webpack_require__(197),
+	    functionToString: __webpack_require__(212),
+	    getConfig: __webpack_require__(213),
+	    getPropertyDescriptor: __webpack_require__(214),
+	    iterableToString: __webpack_require__(198),
+	    orderByFirstCall: __webpack_require__(215),
+	    restore: __webpack_require__(216),
+	    timesInWords: __webpack_require__(218),
+	    typeOf: __webpack_require__(199),
+	    walk: __webpack_require__(217),
+	    wrapMethod: __webpack_require__(219)
 	};
 
 
 /***/ }),
-/* 203 */
+/* 204 */
 /***/ (function(module, exports) {
 
 	"use strict";
@@ -24334,7 +24666,7 @@
 
 
 /***/ }),
-/* 204 */
+/* 205 */
 /***/ (function(module, exports) {
 
 	"use strict";
@@ -24387,7 +24719,7 @@
 
 
 /***/ }),
-/* 205 */
+/* 206 */
 /***/ (function(module, exports) {
 
 	"use strict";
@@ -24402,7 +24734,7 @@
 
 
 /***/ }),
-/* 206 */
+/* 207 */
 /***/ (function(module, exports) {
 
 	"use strict";
@@ -24484,12 +24816,12 @@
 
 
 /***/ }),
-/* 207 */
+/* 208 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var formatio = __webpack_require__(208);
+	var formatio = __webpack_require__(209);
 
 	var formatter = formatio.configure({
 	    quoteStrings: false,
@@ -24502,13 +24834,13 @@
 
 
 /***/ }),
-/* 208 */
+/* 209 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(global) {(("function" === "function" && __webpack_require__(209) && function (m) {
-	    !(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__(210)], __WEBPACK_AMD_DEFINE_FACTORY__ = (m), __WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ? (__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(global) {(("function" === "function" && __webpack_require__(210) && function (m) {
+	    !(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__(211)], __WEBPACK_AMD_DEFINE_FACTORY__ = (m), __WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ? (__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 	}) || (typeof module === "object" && function (m) {
-	    module.exports = m(__webpack_require__(210));
+	    module.exports = m(__webpack_require__(211));
 	}) || function (m) { this.formatio = m(this.samsam); }
 	)(function (samsam) {
 	    "use strict";
@@ -24738,7 +25070,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ }),
-/* 209 */
+/* 210 */
 /***/ (function(module, exports) {
 
 	/* WEBPACK VAR INJECTION */(function(__webpack_amd_options__) {module.exports = __webpack_amd_options__;
@@ -24746,10 +25078,10 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, {}))
 
 /***/ }),
-/* 210 */
+/* 211 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;(("function" === "function" && __webpack_require__(209) && function (m) { !(__WEBPACK_AMD_DEFINE_FACTORY__ = (m), __WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ? (__WEBPACK_AMD_DEFINE_FACTORY__.call(exports, __webpack_require__, exports, module)) : __WEBPACK_AMD_DEFINE_FACTORY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__)); }) ||
+	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;(("function" === "function" && __webpack_require__(210) && function (m) { !(__WEBPACK_AMD_DEFINE_FACTORY__ = (m), __WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ? (__WEBPACK_AMD_DEFINE_FACTORY__.call(exports, __webpack_require__, exports, module)) : __WEBPACK_AMD_DEFINE_FACTORY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__)); }) ||
 	 (typeof module === "object" &&
 	      function (m) { module.exports = m(); }) || // Node
 	 function (m) { this.samsam = m(); } // Browser globals
@@ -25189,7 +25521,7 @@
 
 
 /***/ }),
-/* 211 */
+/* 212 */
 /***/ (function(module, exports) {
 
 	"use strict";
@@ -25215,12 +25547,12 @@
 
 
 /***/ }),
-/* 212 */
+/* 213 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var defaultConfig = __webpack_require__(205);
+	var defaultConfig = __webpack_require__(206);
 
 	module.exports = function getConfig(custom) {
 	    var config = {};
@@ -25239,7 +25571,7 @@
 
 
 /***/ }),
-/* 213 */
+/* 214 */
 /***/ (function(module, exports) {
 
 	"use strict";
@@ -25256,7 +25588,7 @@
 
 
 /***/ }),
-/* 214 */
+/* 215 */
 /***/ (function(module, exports) {
 
 	"use strict";
@@ -25275,12 +25607,12 @@
 
 
 /***/ }),
-/* 215 */
+/* 216 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var walk = __webpack_require__(216);
+	var walk = __webpack_require__(217);
 
 	function isRestorable(obj) {
 	    return typeof obj === "function" && typeof obj.restore === "function" && obj.restore.sinon;
@@ -25300,7 +25632,7 @@
 
 
 /***/ }),
-/* 216 */
+/* 217 */
 /***/ (function(module, exports) {
 
 	"use strict";
@@ -25351,7 +25683,7 @@
 
 
 /***/ }),
-/* 217 */
+/* 218 */
 /***/ (function(module, exports) {
 
 	"use strict";
@@ -25364,13 +25696,13 @@
 
 
 /***/ }),
-/* 218 */
+/* 219 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var getPropertyDescriptor = __webpack_require__(213);
-	var valueToString = __webpack_require__(200);
+	var getPropertyDescriptor = __webpack_require__(214);
+	var valueToString = __webpack_require__(201);
 
 	var hasOwn = Object.prototype.hasOwnProperty;
 
@@ -25521,16 +25853,16 @@
 
 
 /***/ }),
-/* 219 */
+/* 220 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(global) {"use strict";
 
-	var calledInOrder = __webpack_require__(203);
-	var orderByFirstCall = __webpack_require__(214);
-	var timesInWords = __webpack_require__(217);
-	var format = __webpack_require__(207);
-	var sinonMatch = __webpack_require__(193);
+	var calledInOrder = __webpack_require__(204);
+	var orderByFirstCall = __webpack_require__(215);
+	var timesInWords = __webpack_require__(218);
+	var format = __webpack_require__(208);
+	var sinonMatch = __webpack_require__(194);
 
 	var slice = Array.prototype.slice;
 
@@ -25731,16 +26063,16 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ }),
-/* 220 */
+/* 221 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var sinonSpy = __webpack_require__(221);
-	var sinonStub = __webpack_require__(229);
-	var sinonMock = __webpack_require__(234);
-	var sandboxStub = __webpack_require__(236);
-	var collectOwnMethods = __webpack_require__(237);
+	var sinonSpy = __webpack_require__(222);
+	var sinonStub = __webpack_require__(230);
+	var sinonMock = __webpack_require__(235);
+	var sandboxStub = __webpack_require__(237);
+	var collectOwnMethods = __webpack_require__(238);
 
 	var push = [].push;
 
@@ -25872,22 +26204,22 @@
 
 
 /***/ }),
-/* 221 */
+/* 222 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var createBehavior = __webpack_require__(222).create;
-	var extend = __webpack_require__(206);
-	var functionName = __webpack_require__(196);
-	var functionToString = __webpack_require__(211);
-	var getPropertyDescriptor = __webpack_require__(213);
-	var sinonMatch = __webpack_require__(193);
-	var deepEqual = __webpack_require__(194).use(sinonMatch);
-	var spyCall = __webpack_require__(225);
-	var wrapMethod = __webpack_require__(218);
-	var sinonFormat = __webpack_require__(207);
-	var valueToString = __webpack_require__(200);
+	var createBehavior = __webpack_require__(223).create;
+	var extend = __webpack_require__(207);
+	var functionName = __webpack_require__(197);
+	var functionToString = __webpack_require__(212);
+	var getPropertyDescriptor = __webpack_require__(214);
+	var sinonMatch = __webpack_require__(194);
+	var deepEqual = __webpack_require__(195).use(sinonMatch);
+	var spyCall = __webpack_require__(226);
+	var wrapMethod = __webpack_require__(219);
+	var sinonFormat = __webpack_require__(208);
+	var valueToString = __webpack_require__(201);
 
 	var push = Array.prototype.push;
 	var slice = Array.prototype.slice;
@@ -25971,7 +26303,7 @@
 
 	// Public API
 	var spyApi = {
-	    formatters: __webpack_require__(226),
+	    formatters: __webpack_require__(227),
 
 	    reset: function () {
 	        if (this.invoking) {
@@ -26331,14 +26663,14 @@
 
 
 /***/ }),
-/* 222 */
+/* 223 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process, setImmediate) {"use strict";
 
-	var extend = __webpack_require__(206);
-	var functionName = __webpack_require__(196);
-	var valueToString = __webpack_require__(200);
+	var extend = __webpack_require__(207);
+	var functionName = __webpack_require__(197);
+	var valueToString = __webpack_require__(201);
 
 	var slice = Array.prototype.slice;
 	var join = Array.prototype.join;
@@ -26550,10 +26882,10 @@
 	proto.createBehavior = createBehavior;
 	module.exports = proto;
 
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3), __webpack_require__(223).setImmediate))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3), __webpack_require__(224).setImmediate))
 
 /***/ }),
-/* 223 */
+/* 224 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	var apply = Function.prototype.apply;
@@ -26606,13 +26938,13 @@
 	};
 
 	// setimmediate attaches itself to the global object
-	__webpack_require__(224);
+	__webpack_require__(225);
 	exports.setImmediate = setImmediate;
 	exports.clearImmediate = clearImmediate;
 
 
 /***/ }),
-/* 224 */
+/* 225 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(global, process) {(function (global, undefined) {
@@ -26805,16 +27137,16 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(3)))
 
 /***/ }),
-/* 225 */
+/* 226 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var sinonMatch = __webpack_require__(193);
-	var deepEqual = __webpack_require__(194).use(sinonMatch);
-	var functionName = __webpack_require__(196);
-	var sinonFormat = __webpack_require__(207);
-	var valueToString = __webpack_require__(200);
+	var sinonMatch = __webpack_require__(194);
+	var deepEqual = __webpack_require__(195).use(sinonMatch);
+	var functionName = __webpack_require__(197);
+	var sinonFormat = __webpack_require__(208);
+	var valueToString = __webpack_require__(201);
 	var slice = Array.prototype.slice;
 
 	function throwYieldError(proxy, text, args) {
@@ -27035,16 +27367,16 @@
 
 
 /***/ }),
-/* 226 */
+/* 227 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var color = __webpack_require__(227);
-	var timesInWords = __webpack_require__(217);
-	var sinonFormat = __webpack_require__(207);
-	var sinonMatch = __webpack_require__(193);
-	var jsDiff = __webpack_require__(228);
+	var color = __webpack_require__(228);
+	var timesInWords = __webpack_require__(218);
+	var sinonFormat = __webpack_require__(208);
+	var sinonMatch = __webpack_require__(194);
+	var jsDiff = __webpack_require__(229);
 	var push = Array.prototype.push;
 
 	function colorSinonMatchText(matcher, calledArg, calledArgMessage) {
@@ -27141,7 +27473,7 @@
 
 
 /***/ }),
-/* 227 */
+/* 228 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {"use strict";
@@ -27167,7 +27499,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3)))
 
 /***/ }),
-/* 228 */
+/* 229 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/*!
@@ -29011,21 +29343,21 @@
 	;
 
 /***/ }),
-/* 229 */
+/* 230 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var behavior = __webpack_require__(222);
-	var behaviors = __webpack_require__(230);
-	var spy = __webpack_require__(221);
-	var extend = __webpack_require__(206);
-	var functionToString = __webpack_require__(211);
-	var getPropertyDescriptor = __webpack_require__(213);
-	var wrapMethod = __webpack_require__(218);
-	var stubEntireObject = __webpack_require__(231);
-	var stubDescriptor = __webpack_require__(232);
-	var throwOnFalsyObject = __webpack_require__(233);
+	var behavior = __webpack_require__(223);
+	var behaviors = __webpack_require__(231);
+	var spy = __webpack_require__(222);
+	var extend = __webpack_require__(207);
+	var functionToString = __webpack_require__(212);
+	var getPropertyDescriptor = __webpack_require__(214);
+	var wrapMethod = __webpack_require__(219);
+	var stubEntireObject = __webpack_require__(232);
+	var stubDescriptor = __webpack_require__(233);
+	var throwOnFalsyObject = __webpack_require__(234);
 
 	var slice = Array.prototype.slice;
 
@@ -29194,12 +29526,12 @@
 
 
 /***/ }),
-/* 230 */
+/* 231 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var getPropertyDescriptor = __webpack_require__(213);
+	var getPropertyDescriptor = __webpack_require__(214);
 
 	var slice = [].slice;
 	var useLeftMostCallback = -1;
@@ -29437,13 +29769,13 @@
 
 
 /***/ }),
-/* 231 */
+/* 232 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var getPropertyDescriptor = __webpack_require__(213);
-	var walk = __webpack_require__(216);
+	var getPropertyDescriptor = __webpack_require__(214);
+	var walk = __webpack_require__(217);
 
 	function stubEntireObject(stub, object) {
 	    walk(object || {}, function (prop, propOwner) {
@@ -29465,14 +29797,14 @@
 
 
 /***/ }),
-/* 232 */
+/* 233 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var deprecated = __webpack_require__(201);
-	var spy = __webpack_require__(221);
-	var wrapMethod = __webpack_require__(218);
+	var deprecated = __webpack_require__(202);
+	var spy = __webpack_require__(222);
+	var wrapMethod = __webpack_require__(219);
 
 	// This is deprecated and will be removed in a future version of sinon.
 	// We will only consider pull requests that fix serious bugs in the implementation
@@ -29512,11 +29844,11 @@
 
 
 /***/ }),
-/* 233 */
+/* 234 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var valueToString = __webpack_require__(200);
+	var valueToString = __webpack_require__(201);
 
 	function throwOnFalsyObject(object, property) {
 	    if (property && !object) {
@@ -29529,17 +29861,17 @@
 
 
 /***/ }),
-/* 234 */
+/* 235 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var mockExpectation = __webpack_require__(235);
-	var spyCallToString = __webpack_require__(225).toString;
-	var extend = __webpack_require__(206);
-	var match = __webpack_require__(193);
-	var deepEqual = __webpack_require__(194).use(match);
-	var wrapMethod = __webpack_require__(218);
+	var mockExpectation = __webpack_require__(236);
+	var spyCallToString = __webpack_require__(226).toString;
+	var extend = __webpack_require__(207);
+	var match = __webpack_require__(194);
+	var deepEqual = __webpack_require__(195).use(match);
+	var wrapMethod = __webpack_require__(219);
 
 	var push = Array.prototype.push;
 
@@ -29711,21 +30043,21 @@
 
 
 /***/ }),
-/* 235 */
+/* 236 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var spyInvoke = __webpack_require__(221).invoke;
-	var spyCallToString = __webpack_require__(225).toString;
-	var timesInWords = __webpack_require__(217);
-	var extend = __webpack_require__(206);
-	var match = __webpack_require__(193);
-	var stub = __webpack_require__(229);
-	var assert = __webpack_require__(219);
-	var deepEqual = __webpack_require__(194).use(match);
-	var format = __webpack_require__(207);
-	var valueToString = __webpack_require__(200);
+	var spyInvoke = __webpack_require__(222).invoke;
+	var spyCallToString = __webpack_require__(226).toString;
+	var timesInWords = __webpack_require__(218);
+	var extend = __webpack_require__(207);
+	var match = __webpack_require__(194);
+	var stub = __webpack_require__(230);
+	var assert = __webpack_require__(220);
+	var deepEqual = __webpack_require__(195).use(match);
+	var format = __webpack_require__(208);
+	var valueToString = __webpack_require__(201);
 
 	var slice = Array.prototype.slice;
 	var push = Array.prototype.push;
@@ -30005,17 +30337,17 @@
 
 
 /***/ }),
-/* 236 */
+/* 237 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var collectOwnMethods = __webpack_require__(237);
-	var deprecated = __webpack_require__(201);
-	var getPropertyDescriptor = __webpack_require__(213);
-	var stubNonFunctionProperty = __webpack_require__(238);
-	var sinonStub = __webpack_require__(229);
-	var throwOnFalsyObject = __webpack_require__(233);
+	var collectOwnMethods = __webpack_require__(238);
+	var deprecated = __webpack_require__(202);
+	var getPropertyDescriptor = __webpack_require__(214);
+	var stubNonFunctionProperty = __webpack_require__(239);
+	var sinonStub = __webpack_require__(230);
+	var throwOnFalsyObject = __webpack_require__(234);
 
 	// This is deprecated and will be removed in a future version of sinon.
 	// We will only consider pull requests that fix serious bugs in the implementation
@@ -30062,13 +30394,13 @@
 
 
 /***/ }),
-/* 237 */
+/* 238 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var walk = __webpack_require__(216);
-	var getPropertyDescriptor = __webpack_require__(213);
+	var walk = __webpack_require__(217);
+	var getPropertyDescriptor = __webpack_require__(214);
 
 	function collectMethod(methods, object, prop, propOwner) {
 	    if (
@@ -30092,12 +30424,12 @@
 
 
 /***/ }),
-/* 238 */
+/* 239 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var valueToString = __webpack_require__(200);
+	var valueToString = __webpack_require__(201);
 	var hasOwnProperty = Object.prototype.hasOwnProperty;
 
 	function stubNonFunctionProperty(object, property, value) {
@@ -30120,19 +30452,19 @@
 
 
 /***/ }),
-/* 239 */
+/* 240 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var extend = __webpack_require__(206);
-	var sinonCollection = __webpack_require__(220);
-	var sinonMatch = __webpack_require__(193);
-	var sinonAssert = __webpack_require__(219);
-	var sinonClock = __webpack_require__(240);
-	var fakeServer = __webpack_require__(242);
-	var fakeXhr = __webpack_require__(243);
-	var fakeServerWithClock = __webpack_require__(251);
+	var extend = __webpack_require__(207);
+	var sinonCollection = __webpack_require__(221);
+	var sinonMatch = __webpack_require__(194);
+	var sinonAssert = __webpack_require__(220);
+	var sinonClock = __webpack_require__(241);
+	var fakeServer = __webpack_require__(243);
+	var fakeXhr = __webpack_require__(244);
+	var fakeServerWithClock = __webpack_require__(252);
 
 	var push = [].push;
 
@@ -30278,12 +30610,12 @@
 
 
 /***/ }),
-/* 240 */
+/* 241 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(setImmediate, clearImmediate) {"use strict";
 
-	var llx = __webpack_require__(241);
+	var llx = __webpack_require__(242);
 
 	exports.useFakeTimers = function () {
 	    var now;
@@ -30316,10 +30648,10 @@
 	    Date: Date
 	};
 
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(223).setImmediate, __webpack_require__(223).clearImmediate))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(224).setImmediate, __webpack_require__(224).clearImmediate))
 
 /***/ }),
-/* 241 */
+/* 242 */
 /***/ (function(module, exports) {
 
 	/* WEBPACK VAR INJECTION */(function(global) {"use strict";
@@ -30982,16 +31314,16 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ }),
-/* 242 */
+/* 243 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var fakeXhr = __webpack_require__(243);
+	var fakeXhr = __webpack_require__(244);
 	var push = [].push;
-	var format = __webpack_require__(207);
-	var configureLogError = __webpack_require__(204);
-	var pathToRegexp = __webpack_require__(249);
+	var format = __webpack_require__(208);
+	var configureLogError = __webpack_require__(205);
+	var pathToRegexp = __webpack_require__(250);
 
 	function responseArray(handler) {
 	    var response = handler;
@@ -31274,16 +31606,16 @@
 
 
 /***/ }),
-/* 243 */
+/* 244 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(global) {"use strict";
 
-	var TextEncoder = __webpack_require__(244).TextEncoder;
+	var TextEncoder = __webpack_require__(245).TextEncoder;
 
-	var configureLogError = __webpack_require__(204);
-	var sinonEvent = __webpack_require__(247);
-	var extend = __webpack_require__(206);
+	var configureLogError = __webpack_require__(205);
+	var sinonEvent = __webpack_require__(248);
+	var extend = __webpack_require__(207);
 
 	function getWorkingXHR(globalScope) {
 	    var supportsXHR = typeof globalScope.XMLHttpRequest !== "undefined";
@@ -31305,7 +31637,7 @@
 	var supportsCustomEvent = typeof CustomEvent !== "undefined";
 	var supportsFormData = typeof FormData !== "undefined";
 	var supportsArrayBuffer = typeof ArrayBuffer !== "undefined";
-	var supportsBlob = __webpack_require__(248).isSupported;
+	var supportsBlob = __webpack_require__(249).isSupported;
 	var isReactNative = global.navigator && global.navigator.product === "ReactNative";
 	var sinonXhr = { XMLHttpRequest: global.XMLHttpRequest };
 	sinonXhr.GlobalXMLHttpRequest = global.XMLHttpRequest;
@@ -31926,13 +32258,13 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ }),
-/* 244 */
+/* 245 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	// This is free and unencumbered software released into the public domain.
 	// See LICENSE.md for more information.
 
-	var encoding = __webpack_require__(245);
+	var encoding = __webpack_require__(246);
 
 	module.exports = {
 	  TextEncoder: encoding.TextEncoder,
@@ -31941,7 +32273,7 @@
 
 
 /***/ }),
-/* 245 */
+/* 246 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	// This is free and unencumbered software released into the public domain.
@@ -31958,7 +32290,7 @@
 	  if (typeof module !== "undefined" && module.exports &&
 	    !global["encoding-indexes"]) {
 	    global["encoding-indexes"] =
-	      __webpack_require__(246)["encoding-indexes"];
+	      __webpack_require__(247)["encoding-indexes"];
 	  }
 
 	  //
@@ -35259,7 +35591,7 @@
 	}(this || {}));
 
 /***/ }),
-/* 246 */
+/* 247 */
 /***/ (function(module, exports) {
 
 	(function(global) {
@@ -35311,7 +35643,7 @@
 	}(this || {}));
 
 /***/ }),
-/* 247 */
+/* 248 */
 /***/ (function(module, exports) {
 
 	"use strict";
@@ -35401,7 +35733,7 @@
 
 
 /***/ }),
-/* 248 */
+/* 249 */
 /***/ (function(module, exports) {
 
 	/*global Blob */
@@ -35417,10 +35749,10 @@
 
 
 /***/ }),
-/* 249 */
+/* 250 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	var isarray = __webpack_require__(250)
+	var isarray = __webpack_require__(251)
 
 	/**
 	 * Expose `pathToRegexp`.
@@ -35849,7 +36181,7 @@
 
 
 /***/ }),
-/* 250 */
+/* 251 */
 /***/ (function(module, exports) {
 
 	module.exports = Array.isArray || function (arr) {
@@ -35858,13 +36190,13 @@
 
 
 /***/ }),
-/* 251 */
+/* 252 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var fakeServer = __webpack_require__(242);
-	var fakeTimers = __webpack_require__(240);
+	var fakeServer = __webpack_require__(243);
+	var fakeTimers = __webpack_require__(241);
 
 	function Server() {}
 	Server.prototype = fakeServer;
@@ -35930,16 +36262,36 @@
 
 
 /***/ }),
-/* 252 */
+/* 253 */
+/***/ (function(module, exports) {
+
+	"use strict";
+
+	// This stores props and state for each node. Uses the address of the node as the key.
+
+	// Planning to add other storage objects here and have them all be keys on the export.
+	var storage = {};
+
+	var empty = function empty() {
+	  return storage = {};
+	};
+
+	module.exports = {
+	  storage: storage,
+	  empty: empty
+	};
+
+/***/ }),
+/* 254 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 
 	// load the styles
-	var content = __webpack_require__(253);
+	var content = __webpack_require__(255);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
-	var update = __webpack_require__(255)(content, {});
+	var update = __webpack_require__(257)(content, {});
 	if(content.locals) module.exports = content.locals;
 	// Hot Module Replacement
 	if(false) {
@@ -35956,10 +36308,10 @@
 	}
 
 /***/ }),
-/* 253 */
+/* 255 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	exports = module.exports = __webpack_require__(254)();
+	exports = module.exports = __webpack_require__(256)();
 	// imports
 
 
@@ -35970,7 +36322,7 @@
 
 
 /***/ }),
-/* 254 */
+/* 256 */
 /***/ (function(module, exports) {
 
 	/*
@@ -36026,7 +36378,7 @@
 
 
 /***/ }),
-/* 255 */
+/* 257 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/*
