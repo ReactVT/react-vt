@@ -26,11 +26,13 @@ const parser = (dom, reactDom) => {
   return ReactParentTraverse(dom);
 };
 
+
+// THIS NEEDS TO BE CLEANED UP!
 const nodeStoreController = (node, name, address, props, state, parent = false) => {
   nodeStore.storage.address[address] = {};
   nodeStore.storage.address[address].state = state;
   nodeStore.storage.address[address].props = props;
-  if (props.id) nodeStore.storage.id[props.id] = address; 
+  if (props.id && node.constructor.name === 'ReactDOMComponent') nodeStore.storage.id[props.id] = address; 
   if (props.className && node.constructor.name === 'ReactDOMComponent') {
     if (nodeStore.storage.class[props.className]) nodeStore.storage.class[props.className].push(address)
     else nodeStore.storage.class[props.className] = [address];
@@ -38,6 +40,7 @@ const nodeStoreController = (node, name, address, props, state, parent = false) 
   if (node.constructor.name === 'ReactDOMComponent') nodeStore.storage.tag[name] ? nodeStore.storage.tag[name].push(address) : nodeStore.storage.tag[name] = [address];
   else {
     nodeStore.storage.node[name] ? nodeStore.storage.node[name].push(address) : nodeStore.storage.node[name] = [address];
+    if (!parent && node._renderedComponent._hostNode.id) nodeStore.storage.id[node._renderedComponent._hostNode.id] = address;
     if (!parent && node._renderedComponent._hostNode.className) {
       const classArr = node._renderedComponent._hostNode.className.split(/\s+/);
       classArr.forEach(item => {
