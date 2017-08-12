@@ -1,0 +1,11 @@
+{
+  "extends": "airbnb",
+  "root": true,
+  "env": {
+    "node": true,
+    "mocha": true
+  },
+  "globals": {
+    "__dirname": true
+  }
+}
