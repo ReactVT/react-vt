@@ -7,9 +7,14 @@ var assertionList = [
 {name: 'test4', asserts: [{'selector': 'component', 'selectorName': 'Row', 'selectorModifier': '[1]', 'source': 'props', 'property': 'funarr', 'modifier': '.length', 'type': 'equal', 'value': '5', 'dataType': 'number', 'loc': ''}]}, 
 {name: 'test5', asserts: [{'selector': 'component', 'selectorName': 'App', 'selectorModifier': '', 'source': 'state', 'property': 'test', 'modifier': '', 'type': 'equal', 'value': 'testy', 'dataType': 'string', 'loc': ''}]}, 
 {name: 'test6', asserts: [{'selector': 'class', 'selectorName': 'imaclass', 'selectorModifier': '.length', 'source': '', 'property': '', 'modifier': '', 'type': 'equal', 'value': '2', 'dataType': 'number', 'loc': ''}]},
-{name: 'test7', asserts: [{'selector': 'node', 'selectorName': '', 'selectorModifier': '', 'source': 'text', 'property': '', 'modifier': '', 'type': 'equal', 'value': 'one', 'dataType': 'text', 'loc': ["list", 0]}, 
+{name: 'test7', asserts: [{'selector': 'node', 'selectorName': '', 'selectorModifier': '', 'source': 'text', 'property': '', 'modifier': '', 'type': 'equal', 'value': 'one', 'dataType': 'string', 'loc': ["list", 0]}, 
 {'type': 'action', 'event': 'click', 'loc': ["list", 0]},
-{'selector': 'node', 'selectorName': '', 'selectorModifier': '', 'source': 'text', 'property': '', 'modifier': '', 'type': 'equal', 'value': 'two', 'dataType': 'text', 'loc': ["list", 0]}]}]; 
+{'selector': 'node', 'selectorName': '', 'selectorModifier': '', 'source': 'text', 'property': '', 'modifier': '', 'type': 'equal', 'value': 'two', 'dataType': 'string', 'loc': ["list", 0]}]}];
+
+var assertionList2 = [
+{name: 'Test one', asserts: [{'selector': 'id', 'selectorName': 'shopList', 'selectorModifier': '', 'source': 'text', 'property': '', 'modifier': '', 'type': 'equal', 'value': 'Shopping List', 'dataType': 'string', 'loc': ''}]}, 
+
+{name: 'Test two', asserts: [{'selector': 'tag', 'selectorName': 'h1', 'selectorModifier': '[0]', 'source': 'text', 'property': '', 'modifier': '', 'type': 'equal', 'value': 'Shopping List', 'dataType': 'string', 'loc': ''}]}]; 
 
 const newLine = "\n";
 const doubleLine = "\n \n";
@@ -23,6 +28,7 @@ function generateTest(list, app) {
   list.forEach(item => {
     result += addBlock(item); 
   }); 
+  result += '});'
   console.log(result);
 }
 
@@ -43,21 +49,106 @@ function startDescribe(code, app) {
 }
 
 function addBlock(block) {
-  let result = `it('${block.name}', () => {${newLine}`;
+  let result = `${oneSpace}it('${block.name}', () => {${newLine}`;
   block.asserts.forEach(assert => {
-    if (assert.type === 'action') result += addAction(assert); 
+    if (assert.type === 'action') result += addAction(assert);
+    else result += addTest(assert); 
   }); 
   return result;  
 } 
 
+function addTest(assert) {
+  // Edge cases for now
+  if (assert.source === 'state') return stateTest(assert);
+  if (assert.source === 'node') return nodeTest; 
+  
+  // Logic for doing initial find
+  let findMod = '';
+  if (assert.selector === 'id') findMod = '#'; 
+  if (assert.selector === 'class') findMod = '.';
+  let result = `${twoSpace}expect(wrapper.find('${findMod}${assert.selectorName}').`; 
+  
+  // Selector Mod Logic
+  if (assert.selectorModifier === '.length') result += 'length).';
+  if (assert.selectorModifier[0] === '[') {
+    findMod = assert.selectorModifier.slice(1, -1);
+    result += `at(${findMod}).`;
+  }
+
+  // Source logic
+  if (assert.source) result += sourceTest(assert);
+  result += evalTest(assert); 
+  return result; 
+}
+
+function evalTest(assert) {
+  if (assert.type !== 'equal') return 'we have this?'; 
+  const expectation = convertType(assert); 
+  if (assert.dataType !== 'string') return `to.equal(${expectation});${newLine}`;
+  return `to.equal('${expectation}');${newLine}`;
+}
+
+function convertType(assert) {
+  switch (assert.dataType) {
+    case 'boolean':
+      return Boolean(assert.value);
+      break;
+    case 'number':
+      return +assert.value;
+      break;
+    case 'null':
+      return null;
+      break;
+    case 'undefined':
+      return undefined;
+      break;
+    case 'string':
+      return assert.value; 
+      break;
+    default:
+      console.log('Data type block failed');
+      return 'Data type block failed';
+  }
+}
+
+
+function sourceTest(assert) {
+  if (assert.source === 'text') return 'text()).';
+  let result;
+  if (assert.modifier === '.length') {
+    return `props().${assert.property}.length).`;
+  }
+  if (assert.modifier[0] === '[') {
+    return `props().${assert.property}${assert.modifier}).`;
+  }
+  return `props().${assert.property}).`;
+}
+
+function nodeTest(assert) {
+  // Tabled for later
+}
+
+// function propTest(assert) {
+//   // Need to think about how to remap addresses
+// }
+
+function stateTest(assert) {
+  let result = `${twoSpace}wrapper = mount(<${assert.selectorName} />);${newLine}`; 
+  if (assert.modifier === '') result += `${twoSpace}expect(wrapper.state().${assert.property}).`; 
+  else result += `${twoSpace}expect(wrapper.state().${assert.property}${assert.modifier}).`;
+  result += evalTest(assert); 
+  return result;  
+}
+
+
 function addAction(assert) {
   let result = translateLoc(assert.loc);
-  result += `simulate(${assert.event});`; 
+  result += `simulate(${assert.event});${newLine}`; 
   return result; 
 }
 
 function translateLoc(loc) {
-  let result = `wrapper.find('#${loc[0]}').`;
+  let result = `${twoSpace}wrapper.find('#${loc[0]}').`;
   for (let i = 1; i < loc.length; i++) {
     result += `childAt(${loc[i]}).`; 
   }
@@ -67,7 +158,7 @@ function translateLoc(loc) {
 
 
 generateTest(assertionList, 'App'); 
-console.log(translateLoc(['board', 0, 1]));
+generateTest(assertionList2, 'App'); 
 
 
 
