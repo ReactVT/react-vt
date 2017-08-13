@@ -109,7 +109,7 @@ const ReactChildTraverse = (child, address) => {
     if (newProps.children) delete newProps.children; 
     childData.props = cloneDeep(newProps);
     children = child._renderedComponent._renderedChildren;
-    childData.address = child._instance.props.id ? [child._instance.props.id] : address; 
+    childData.address = child._renderedComponent._hostNode.id ? [child._renderedComponent._hostNode.id] : address; 
   } else {
     // Parsing logic for dumb React Components
     childData.name = child._currentElement.type;
