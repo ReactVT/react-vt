@@ -93,7 +93,6 @@ const ReactParentTraverse = (dom) => {
 };
 
 const ReactChildTraverse = (child, address) => {
-  console.log('child!!!!', child);
   const childData = {
     children: [],
   };

@@ -1,46 +1,125 @@
-const data = [
- {name: 'firstBlock', asserts: [
-    {'type': 'greaterthan', 'selector': 'component', 'selectorName': 'Row', 'selectorModifier': '.length', 'value': '2', 'dataType': 'number'}, 
-    {'type': 'equal', 'selector': 'id', 'selectorName': 'previousMatches', 'source': 'text', 'value': 'Previous matches', 'type': 'string'}, 
-    {'type': 'equal', 'selector': 'class', 'selectorName': 'rows', 'selectorModifier': '[0]' 'source': 'text', 'value': 'Previous matches', 'dataType': 'string'}
- ]}
-];
 
 
+var assertionList = [
+{name: 'test1', asserts: [{'selector': 'component', 'selectorName': 'Row', 'selectorModifier': '.length', 'source': '', 'property': '', 'modifier': '', 'type': 'equal', 'value': '2', 'dataType': 'number', 'loc': ''}]},
+{name: 'test2', asserts: [{'selector': 'component', 'selectorName': 'Row', 'selectorModifier': '[1]', 'source': 'props', 'property': 'number', 'modifier': '', 'type': 'equal', 'value': '6', 'dataType': 'number', 'loc': ''}]}, 
+{name: 'test3', asserts: [{'selector': 'component', 'selectorName': 'Row', 'selectorModifier': '[1]', 'source': 'props', 'property': 'funarr', 'modifier': '[2]', 'type': 'equal', 'value': '3', 'dataType': 'number', 'loc': ''}]}, 
+{name: 'test4', asserts: [{'selector': 'component', 'selectorName': 'Row', 'selectorModifier': '[1]', 'source': 'props', 'property': 'funarr', 'modifier': '.length', 'type': 'equal', 'value': '5', 'dataType': 'number', 'loc': ''}]}, 
+{name: 'test5', asserts: [{'selector': 'component', 'selectorName': 'App', 'selectorModifier': '', 'source': 'state', 'property': 'test', 'modifier': '', 'type': 'equal', 'value': 'testy', 'dataType': 'string', 'loc': ''}]}, 
+{name: 'test6', asserts: [{'selector': 'class', 'selectorName': 'imaclass', 'selectorModifier': '.length', 'source': '', 'property': '', 'modifier': '', 'type': 'equal', 'value': '2', 'dataType': 'number', 'loc': ''}]},
 
 
+{name: 'test7', asserts: [{'selector': 'node', 'selectorName': '', 'selectorModifier': '', 'source': 'text', 'property': '', 'modifier': '', 'type': 'equal', 'value': 'one', 'dataType': 'text', 'loc': ["list", 0]}, 
+{'type': 'action', 'event': 'click', 'loc': ["list", 0]},
+{'selector': 'node', 'selectorName': '', 'selectorModifier': '', 'source': 'text', 'property': '', 'modifier': '', 'type': 'equal', 'value': 'two', 'dataType': 'text', 'loc': ["list", 0]}]}]; 
 
-describe('React unit tests', () => {
-  describe('<Square />', () => {
-    let wrapper;
-    let spy
+console.log(assertionList); 
+// Psuedo Tests
+// Component
+  // Check length of components
+  // Check index of component
+    // Check props
+     // prop modifier
+       // length
+       // index
+    // State? 
 
-    before(() => {
-      spy = sinon.spy();
-      wrapper = shallow(<Square row={0} square={1} letter="X" handleClick={ spy } />);
-    });
+// Tag
+  // Check length of tags
+  // Check index of tag
+    // Simulate event
+    // Check inner text
 
-    it('Renders a <div> with class "square"', () => {
-      expect(wrapper.text()).toEqual('X');
-      expect(wrapper.type()).toEqual('div');
-      expect(wrapper.props().className).toEqual('square');
-    });
+ // Class
+   // Check length of classes
+   // Check index of class
+     // simulate event
+     // Check inner text
 
-    it('Clicking on the square passes row and square props to handleClick', () => {
-      //shallow-render parent
-      wrapper.simulate('click');
-      expect(spy.calledOnce).toBe(true);
-      expect(spy.args[0]).toEqual([0, 1]);
-    });
-  });
+// Id 
+  // Simulate event
+  // Check text
 
-  describe('Full Mount Test', () => {
-    // TODO: Write a test to make sure a GameList renders a <ul> with an <li>
-    // for every item in its gameList array prop
-    it('allows us to check state', () => {
-      const wrapper = mount(<App />);
-      expect(wrapper.state().turn).toEqual('X');
-      expect(wrapper.find(Row).length).toEqual(3);
-    });
-  });
-});
+// Our node stuff
+  // ? // Psuedo Tests
+// Component
+  // Check length of components
+  // Check index of component
+    // Check props
+     // prop modifier
+       // length
+       // index
+    // State? 
+
+// Tag
+  // Check length of tags
+  // Check index of tag
+    // Simulate event
+    // Check inner text
+
+ // Class
+   // Check length of classes
+   // Check index of class
+     // simulate event
+     // Check inner text
+
+// Id 
+  // Simulate event
+  // Check text
+
+// Our node stuff
+  // ? 
+
+
+// describe('Full Mount Test', () => {
+//   let wrapper;
+//   beforeEach(() => {
+//     wrapper = mount(<App />);
+//   });
+
+//   it('allows us to check Component length', () => {
+//    expect(wrapper.find('Row').length).to.equal(2);
+//   });
+
+//   it('allows us to props on a specific component', () => {
+//    expect(wrapper.find('Row').at(1).props().number).to.equal(6);
+//   });
+
+//   it('allows us to use a modifier on props', () => {
+//    expect(wrapper.find('Row').at(1).props().funarr[2]).to.equal(3);
+//   });
+
+//   it('allows us to find the length of a prop', () => {
+//    expect(wrapper.find('Row').at(1).props().funarr.length).to.equal(5);
+//   });
+//////////////
+//   it('allows us to check state on a component', () => {
+//    expect(wrapper.state().test).to.equal('testy');
+//   });
+
+//   it('allows us to get the length of a class list', () => {
+//    expect(wrapper.find('.imaclass').length).to.equal(2);
+//   });
+
+//   it('allows us to get the length of a class list', () => {
+//    expect(wrapper.find('.imaclass').length).to.equal(2);
+//   });
+
+//   it('allows us to get the length of a class list', () => {
+//    expect(wrapper.find('.imaclass').length).to.equal(2);
+//   });
+
+//   it('allows us to get the length of a class list', () => {
+//    expect(wrapper.find('.imaclass').length).to.equal(2);
+//   });
+
+//   it('allows us to simulate an event and read text', () => {
+//    expect(wrapper.find('#list').childAt(0).text()).to.equal('one'); 
+//    wrapper.find('#list').childAt(0).childAt(0).simulate('click');
+//    expect(wrapper.find('#list').childAt(0).text()).to.equal('two'); 
+//   });
+
+//   it('allows us to read text on an id', () => {
+//    expect(wrapper.find('#shopList').text()).to.equal('Shopping List'); 
+//   });
+// });
