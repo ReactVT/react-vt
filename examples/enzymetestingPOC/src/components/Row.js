@@ -4,8 +4,8 @@ const Row = (props) => {
   const {number} = props;
   let x = 'There are ' + number + ' rows'; 
   return (
-    <div className="row">
-      <h3 id="supbro">{x}</h3>
+    <div id="propertest" className="imaclass    alsoaclass">
+      <h3>{x}</h3>
     </div>
   );
 };

@@ -12,8 +12,6 @@ import { mount } from 'enzyme';
 import sinon from 'sinon';
 
 
-
-
 describe('Full Mount Test', () => {
   let wrapper;
   beforeEach(() => {
@@ -25,7 +23,7 @@ describe('Full Mount Test', () => {
   });
 
   it('allows us to props on a specific component', () => {
-   expect(wrapper.find('Row').at(1).props().number).to.equal(7);
+   expect(wrapper.find('Row').at(1).props().number).to.equal(6);
   });
 
   it('allows us to use a modifier on props', () => {
@@ -37,15 +35,38 @@ describe('Full Mount Test', () => {
   });
 
   it('allows us to check state on a component', () => {
-   wrapper = mount(<App />);
    expect(wrapper.state().test).to.equal('testy');
   });
 
   it('allows us to get the length of a class list', () => {
-   wrapper = mount(<App />);
-   expect(wrapper.find('.funzo').length).to.equal(3);
+   expect(wrapper.find('.imaclass').length).to.equal(2);
   });
 
+  it('allows us to get the length of a class list', () => {
+   expect(wrapper.find('.imaclass').length).to.equal(2);
+  });
+
+  it('allows us to get the length of a class list', () => {
+   expect(wrapper.find('.imaclass').length).to.equal(2);
+  });
+
+  it('allows us to get the length of a class list', () => {
+   expect(wrapper.find('.imaclass').length).to.equal(2);
+  });
+
+  it('allows us to simulate an event and read text', () => {
+   expect(wrapper.find('#list').childAt(0).text()).to.equal('one'); 
+   wrapper.find('#list').childAt(0).childAt(0).simulate('click');
+   expect(wrapper.find('#list').childAt(0).text()).to.equal('two'); 
+  });
+
+  it('allows us to read text on an id', () => {
+   expect(wrapper.find('#shopList').text()).to.equal('Shopping List'); 
+  });
+
+  it('allows us to read text on an id', () => {
+   expect(wrapper.find('h1').text()).to.equal('Shopping List'); 
+  });
 
 });
 
