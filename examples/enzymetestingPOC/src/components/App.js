@@ -63,7 +63,7 @@ class App extends Component {
       if (i === this.state.editing) {
         return <input key = {i} className="listInput" id="editItem" defaultValue={content} onKeyPress={(e) => this.editData(e,i)} onChange={() => console.log('change')} autoFocus></input>
       } else {
-        return <li key = {i} className="listItem" onDoubleClick={() => this.setState({editing: i})}>{content}<button className="destroy" id="destroy" onClick={() => this.deleteItem(i)}></button></li>;
+        return <li key = {i} className="listItem" onDoubleClick={() => this.setState({editing: i})}>{content}<button className="destroy" onClick={() => this.deleteItem(i)}></button></li>;
 
       }
     });
@@ -73,13 +73,14 @@ class App extends Component {
 
   return (
       <div>
-      <h1 id="shopList">Shopping List</h1>
+      <h1 className="supppppp" id="shopList">Shopping List</h1>
       <input type="text" placeholder="Add an item" id="listInput" className="listInput" onKeyPress={keyPress.bind(this)}/>
       <ul id="list">
         {listElements}
       </ul>
-      <Row className = "funzo" funarr = {funtimes} number={this.state.list.length} />
-      <Row className = "funzo" funarr = {funtimes} number={this.state.list.length + 1} />
+      <Row id="badrow" className="hello" funarr = {funtimes} number={this.state.list.length} />
+      <Row id="badrow" className="hello" funarr = {funtimes} number={this.state.list.length} />
+
       </div>
     );
   }
