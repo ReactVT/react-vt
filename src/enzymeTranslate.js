@@ -7,15 +7,14 @@ var assertionList = [
 {name: 'test4', asserts: [{'selector': 'component', 'selectorName': 'Row', 'selectorModifier': '[1]', 'source': 'props', 'property': 'funarr', 'modifier': '.length', 'type': 'equal', 'value': '5', 'dataType': 'number', 'loc': ''}]}, 
 {name: 'test5', asserts: [{'selector': 'component', 'selectorName': 'App', 'selectorModifier': '', 'source': 'state', 'property': 'test', 'modifier': '', 'type': 'equal', 'value': 'testy', 'dataType': 'string', 'loc': ''}]}, 
 {name: 'test6', asserts: [{'selector': 'class', 'selectorName': 'imaclass', 'selectorModifier': '.length', 'source': '', 'property': '', 'modifier': '', 'type': 'equal', 'value': '2', 'dataType': 'number', 'loc': ''}]},
-
-
 {name: 'test7', asserts: [{'selector': 'node', 'selectorName': '', 'selectorModifier': '', 'source': 'text', 'property': '', 'modifier': '', 'type': 'equal', 'value': 'one', 'dataType': 'text', 'loc': ["list", 0]}, 
 {'type': 'action', 'event': 'click', 'loc': ["list", 0]},
 {'selector': 'node', 'selectorName': '', 'selectorModifier': '', 'source': 'text', 'property': '', 'modifier': '', 'type': 'equal', 'value': 'two', 'dataType': 'text', 'loc': ["list", 0]}]}]; 
 
-let newLine = "\n";
-let oneSpace = '  '; 
-let twoSpace = '    ';
+const newLine = "\n";
+const doubleLine = "\n \n";
+const oneSpace = '  '; 
+const twoSpace = '    ';
 
 function generateTest(list, app) { 
   if (list.length === 0) return; 
@@ -28,36 +27,47 @@ function generateTest(list, app) {
 }
 
 function addDependencies() {
-  let dependents = "const expect = require('chai').expect;" + newLine;
-  dependents += "import { mount } from 'enzyme';"  + newLine;
-  dependents += "import App from 'fill this in with proper path';" + newLine + newLine;
+  let dependents = `const expect = require('chai').expect;${newLine}`;
+  dependents += `import { mount } from 'enzyme';${newLine}`;
+  dependents += `import App from 'fill this in with proper path';${doubleLine}`;
   return dependents; 
 }
 
 function startDescribe(code, app) {
-  code += "describe('React VT Tests', () => {" + newLine; 
-  code += oneSpace + "let wrapper;" + newLine; 
-  code += oneSpace + "beforeEach(() => {"  + newLine; 
-  code += twoSpace + "wrapper = mount<" + app + " />);" + newLine; 
-  code += oneSpace + "});" + newLine + newLine; 
+  code += `describe('React VT Tests', () => {${newLine}`; 
+  code += `${oneSpace}let wrapper;${newLine}`; 
+  code += `${oneSpace}beforeEach(() => {${newLine}`; 
+  code += `${twoSpace}wrapper = mount<${app} />);${newLine}`; 
+  code += `${oneSpace}});${doubleLine}`; 
   return code;   
 }
 
 function addBlock(block) {
-  let result = "it('" + block.name + "', () => {" + newLine;
+  let result = `it('${block.name}', () => {${newLine}`;
   block.asserts.forEach(assert => {
     if (assert.type === 'action') result += addAction(assert); 
   }); 
   return result;  
 } 
 
-function add
+function addAction(assert) {
+  let result = translateLoc(assert.loc);
+  result += `simulate(${assert.event});`; 
+  return result; 
+}
 
+function translateLoc(loc) {
+  let result = `wrapper.find('#${loc[0]}').`;
+  for (let i = 1; i < loc.length; i++) {
+    result += `childAt(${loc[i]}).`; 
+  }
+  return result; 
+}
 
 
 
 generateTest(assertionList, 'App'); 
-
+console.log(translateLoc(['board', 0, 1]));
 
 
 
