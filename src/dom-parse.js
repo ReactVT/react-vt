@@ -32,14 +32,19 @@ const nodeStoreController = (node, name, address, props, state, parent = false) 
   nodeStore.storage.address[address] = {};
   nodeStore.storage.address[address].state = state;
   nodeStore.storage.address[address].props = props;
+  nodeStore.storage.address[address].name = name; 
+
   if (props.id && node.constructor.name === 'ReactDOMComponent') nodeStore.storage.id[props.id] = address; 
   if (props.className && node.constructor.name === 'ReactDOMComponent') {
     if (nodeStore.storage.class[props.className]) nodeStore.storage.class[props.className].push(address)
     else nodeStore.storage.class[props.className] = [address];
   }
-  if (node.constructor.name === 'ReactDOMComponent') nodeStore.storage.tag[name] ? nodeStore.storage.tag[name].push(address) : nodeStore.storage.tag[name] = [address];
-  else {
+  if (node.constructor.name === 'ReactDOMComponent') {
+    nodeStore.storage.tag[name] ? nodeStore.storage.tag[name].push(address) : nodeStore.storage.tag[name] = [address];
+    nodeStore.storage.address[address].index = nodeStore.storage.tag[name].length - 1;  
+  } else {
     nodeStore.storage.node[name] ? nodeStore.storage.node[name].push(address) : nodeStore.storage.node[name] = [address];
+    nodeStore.storage.address[address].index = nodeStore.storage.node[name].length - 1;  
     if (!parent && node._renderedComponent._hostNode.id) nodeStore.storage.id[node._renderedComponent._hostNode.id] = address;
     if (!parent && node._renderedComponent._hostNode.className) {
       const classArr = node._renderedComponent._hostNode.className.split(/\s+/);

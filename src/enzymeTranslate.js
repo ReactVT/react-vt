@@ -8,13 +8,26 @@ var assertionList = [
 {name: 'test5', asserts: [{'selector': 'component', 'selectorName': 'App', 'selectorModifier': '', 'source': 'state', 'property': 'test', 'modifier': '', 'type': 'equal', 'value': 'testy', 'dataType': 'string', 'loc': ''}]}, 
 {name: 'test6', asserts: [{'selector': 'class', 'selectorName': 'imaclass', 'selectorModifier': '.length', 'source': '', 'property': '', 'modifier': '', 'type': 'equal', 'value': '2', 'dataType': 'number', 'loc': ''}]},
 {name: 'test7', asserts: [{'selector': 'node', 'selectorName': '', 'selectorModifier': '', 'source': 'text', 'property': '', 'modifier': '', 'type': 'equal', 'value': 'one', 'dataType': 'string', 'loc': ["list", 0]}, 
-{'type': 'action', 'event': 'click', 'loc': ["list", 0]},
+{'type': 'action', 'event': 'click', 'loc': ["list", 0, 0]},
 {'selector': 'node', 'selectorName': '', 'selectorModifier': '', 'source': 'text', 'property': '', 'modifier': '', 'type': 'equal', 'value': 'two', 'dataType': 'string', 'loc': ["list", 0]}]}];
 
 var assertionList2 = [
 {name: 'Test one', asserts: [{'selector': 'id', 'selectorName': 'shopList', 'selectorModifier': '', 'source': 'text', 'property': '', 'modifier': '', 'type': 'equal', 'value': 'Shopping List', 'dataType': 'string', 'loc': ''}]}, 
 
 {name: 'Test two', asserts: [{'selector': 'tag', 'selectorName': 'h1', 'selectorModifier': '[0]', 'source': 'text', 'property': '', 'modifier': '', 'type': 'equal', 'value': 'Shopping List', 'dataType': 'string', 'loc': ''}]}]; 
+
+var assertionList3 = [
+{name: 'Test three', asserts: [{'selector': 'node', 'selectorName': 'node', 'selectorModifier': '', 'source': 'props', 'property': 'test', 'modifier': '', 'type': 'equal', 'value': 'Shopping List', 'dataType': 'string', 'loc': [root,0,4,0]}]}]; 
+
+var one = ['root', 0, 4, 0].toString(); 
+var two = ['list', 0].toString(); 
+var nodeStore = {address: {}}; 
+nodeStore.address[one] = {}; 
+nodeStore.address[one].name = 'h3'; 
+nodeStore.address[one].index = 1;
+nodeStore.address[two] = {}; 
+nodeStore.address[two].name = 'h3'; 
+nodeStore.address[two].index = 1;
 
 const newLine = "\n";
 const doubleLine = "\n \n";
@@ -40,12 +53,13 @@ function addDependencies() {
 }
 
 function startDescribe(code, app) {
-  code += `describe('React VT Tests', () => {${newLine}`; 
-  code += `${oneSpace}let wrapper;${newLine}`; 
-  code += `${oneSpace}beforeEach(() => {${newLine}`; 
-  code += `${twoSpace}wrapper = mount<${app} />);${newLine}`; 
-  code += `${oneSpace}});${doubleLine}`; 
-  return code;   
+  let result = code; 
+  result += `describe('React VT Tests', () => {${newLine}`; 
+  result += `${oneSpace}let wrapper;${newLine}`; 
+  result += `${oneSpace}beforeEach(() => {${newLine}`; 
+  result += `${twoSpace}wrapper = mount<${app} />);${newLine}`; 
+  result += `${oneSpace}});${doubleLine}`; 
+  return result;   
 }
 
 function addBlock(block) {
@@ -57,10 +71,24 @@ function addBlock(block) {
   return result;  
 } 
 
+function nodeTest(assert) { 
+  console.log(assert.loc);
+  console.log(nodeStore.address)
+  let name = nodeStore.address[assert.loc.toString()].name; 
+  let index = nodeStore.address[assert.loc.toString()].index; 
+  let result = `${oneSpace}expect(wrapper.find('${name}').at(${index}).props().${assert.property}).`;
+  result += evalTest(assert); 
+  return result;
+}
+
+function nodeAddress(assert) {
+   
+}
+
 function addTest(assert) {
   // Edge cases for now
   if (assert.source === 'state') return stateTest(assert);
-  if (assert.source === 'node') return nodeTest; 
+  if (assert.selector === 'node') return nodeTest(assert); 
   
   // Logic for doing initial find
   let findMod = '';
@@ -111,7 +139,6 @@ function convertType(assert) {
   }
 }
 
-
 function sourceTest(assert) {
   if (assert.source === 'text') return 'text()).';
   let result;
@@ -124,14 +151,6 @@ function sourceTest(assert) {
   return `props().${assert.property}).`;
 }
 
-function nodeTest(assert) {
-  // Tabled for later
-}
-
-// function propTest(assert) {
-//   // Need to think about how to remap addresses
-// }
-
 function stateTest(assert) {
   let result = `${twoSpace}wrapper = mount(<${assert.selectorName} />);${newLine}`; 
   if (assert.modifier === '') result += `${twoSpace}expect(wrapper.state().${assert.property}).`; 
@@ -139,7 +158,6 @@ function stateTest(assert) {
   result += evalTest(assert); 
   return result;  
 }
-
 
 function addAction(assert) {
   let result = translateLoc(assert.loc);
@@ -159,6 +177,7 @@ function translateLoc(loc) {
 
 generateTest(assertionList, 'App'); 
 generateTest(assertionList2, 'App'); 
+generateTest(assertionList3, 'App');
 
 
 
