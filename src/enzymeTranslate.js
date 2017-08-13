@@ -13,7 +13,68 @@ var assertionList = [
 {'type': 'action', 'event': 'click', 'loc': ["list", 0]},
 {'selector': 'node', 'selectorName': '', 'selectorModifier': '', 'source': 'text', 'property': '', 'modifier': '', 'type': 'equal', 'value': 'two', 'dataType': 'text', 'loc': ["list", 0]}]}]; 
 
-console.log(assertionList); 
+let newLine = "\n";
+let oneSpace = '  '; 
+let twoSpace = '    ';
+
+function generateTest(list, app) { 
+  if (list.length === 0) return; 
+  let result = addDependencies();  
+  result = startDescribe(result, app); 
+  list.forEach(item => {
+    result += addBlock(item); 
+  }); 
+  console.log(result);
+}
+
+function addDependencies() {
+  let dependents = "const expect = require('chai').expect;" + newLine;
+  dependents += "import { mount } from 'enzyme';"  + newLine;
+  dependents += "import App from 'fill this in with proper path';" + newLine + newLine;
+  return dependents; 
+}
+
+function startDescribe(code, app) {
+  code += "describe('React VT Tests', () => {" + newLine; 
+  code += oneSpace + "let wrapper;" + newLine; 
+  code += oneSpace + "beforeEach(() => {"  + newLine; 
+  code += twoSpace + "wrapper = mount<" + app + " />);" + newLine; 
+  code += oneSpace + "});" + newLine + newLine; 
+  return code;   
+}
+
+function addBlock(block) {
+  let result = "it('" + block.name + "', () => {" + newLine;
+  block.asserts.forEach(assert => {
+    if (assert.type === 'action') result += addAction(assert); 
+  }); 
+  return result;  
+} 
+
+function add
+
+
+
+
+generateTest(assertionList, 'App'); 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Psuedo Tests
 // Component
   // Check length of components
