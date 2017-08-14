@@ -1,5 +1,7 @@
 
-
+//////////////////////// 
+// DUMMY DATA - REMOVE
+///////////////////////
 var assertionList = [
 {name: 'test1', asserts: [{'selector': 'component', 'selectorName': 'Row', 'selectorModifier': '.length', 'source': '', 'property': '', 'modifier': '', 'type': 'equal', 'value': '2', 'dataType': 'number', 'loc': ''}]},
 {name: 'test2', asserts: [{'selector': 'component', 'selectorName': 'Row', 'selectorModifier': '[1]', 'source': 'props', 'property': 'number', 'modifier': '', 'type': 'equal', 'value': '6', 'dataType': 'number', 'loc': ''}]}, 
@@ -17,7 +19,7 @@ var assertionList2 = [
 {name: 'Test two', asserts: [{'selector': 'tag', 'selectorName': 'h1', 'selectorModifier': '[0]', 'source': 'text', 'property': '', 'modifier': '', 'type': 'equal', 'value': 'Shopping List', 'dataType': 'string', 'loc': ''}]}]; 
 
 var assertionList3 = [
-{name: 'Test three', asserts: [{'selector': 'node', 'selectorName': 'node', 'selectorModifier': '', 'source': 'props', 'property': 'test', 'modifier': '', 'type': 'equal', 'value': 'Shopping List', 'dataType': 'string', 'loc': [root,0,4,0]}]}]; 
+{name: 'Test three', asserts: [{'selector': 'node', 'selectorName': 'node', 'selectorModifier': '', 'source': 'props', 'property': 'test', 'modifier': '', 'type': 'equal', 'value': 'Shopping List', 'dataType': 'string', 'loc': ['root',0,4,0]}]}]; 
 
 var one = ['root', 0, 4, 0].toString(); 
 var two = ['list', 0].toString(); 
@@ -28,23 +30,40 @@ nodeStore.address[one].index = 1;
 nodeStore.address[two] = {}; 
 nodeStore.address[two].name = 'h3'; 
 nodeStore.address[two].index = 1;
+//////////////////////// 
+// DUMMY DATA - REMOVE
+///////////////////////
 
+
+
+// Helper variables for spacing
 const newLine = "\n";
 const doubleLine = "\n \n";
 const oneSpace = '  '; 
 const twoSpace = '    ';
 
-function generateTest(list, app) { 
+// Initial function call, eventually contains the final result of our test creatinon
+function generateTest(list, app) {
+  // If there are no asserts, return. 
+  // This should never happen if our frontend works correctly.  
   if (list.length === 0) return; 
-  let result = addDependencies();  
-  result = startDescribe(result, app); 
+
+  // With valid input, we can start building our result. 
+  // First, we start by adding all dependencies
+  let result = addDependencies();
+  // Then we add our Describe syntax to begin our test  
+  result += startDescribe(app);
+  // Now we loop through and add each assertion block as an it statement 
   list.forEach(item => {
     result += addBlock(item); 
   }); 
+  // After looping we close our describe function and are finished
   result += '});'
   console.log(result);
 }
 
+// Adds any needed dependencies to the top of the file
+// TODO - Add mocha? 
 function addDependencies() {
   let dependents = `const expect = require('chai').expect;${newLine}`;
   dependents += `import { mount } from 'enzyme';${newLine}`;
@@ -52,9 +71,9 @@ function addDependencies() {
   return dependents; 
 }
 
-function startDescribe(code, app) {
-  let result = code; 
-  result += `describe('React VT Tests', () => {${newLine}`; 
+// Starts our test file with an initial describe function that will contain all assertion blocks
+function startDescribe(app) {
+  let result = `describe('React VT Tests', () => {${newLine}`; 
   result += `${oneSpace}let wrapper;${newLine}`; 
   result += `${oneSpace}beforeEach(() => {${newLine}`; 
   result += `${twoSpace}wrapper = mount<${app} />);${newLine}`; 
@@ -62,6 +81,7 @@ function startDescribe(code, app) {
   return result;   
 }
 
+// Builds out an assertion block into an 'it' function
 function addBlock(block) {
   let result = `${oneSpace}it('${block.name}', () => {${newLine}`;
   block.asserts.forEach(assert => {
@@ -71,9 +91,8 @@ function addBlock(block) {
   return result;  
 } 
 
+// Custom logic for tests on node addresses, returns full expect line
 function nodeTest(assert) { 
-  console.log(assert.loc);
-  console.log(nodeStore.address)
   let name = nodeStore.address[assert.loc.toString()].name; 
   let index = nodeStore.address[assert.loc.toString()].index; 
   let result = `${oneSpace}expect(wrapper.find('${name}').at(${index}).props().${assert.property}).`;
@@ -81,12 +100,10 @@ function nodeTest(assert) {
   return result;
 }
 
-function nodeAddress(assert) {
-   
-}
-
+// Builds an expect test
 function addTest(assert) {
-  // Edge cases for now
+  
+  // State source and node selector logic requires special handling
   if (assert.source === 'state') return stateTest(assert);
   if (assert.selector === 'node') return nodeTest(assert); 
   
@@ -109,6 +126,7 @@ function addTest(assert) {
   return result; 
 }
 
+// Once we determine what we are evaulating, eval test builds out the logic for what it's being tested against
 function evalTest(assert) {
   if (assert.type !== 'equal') return 'we have this?'; 
   const expectation = convertType(assert); 
@@ -116,29 +134,25 @@ function evalTest(assert) {
   return `to.equal('${expectation}');${newLine}`;
 }
 
+// Converts our expected value into the proper data type, everything starts as a string
 function convertType(assert) {
   switch (assert.dataType) {
     case 'boolean':
       return Boolean(assert.value);
-      break;
     case 'number':
       return +assert.value;
-      break;
     case 'null':
       return null;
-      break;
     case 'undefined':
       return undefined;
-      break;
     case 'string':
       return assert.value; 
-      break;
     default:
-      console.log('Data type block failed');
       return 'Data type block failed';
   }
 }
 
+// Handles out building source aspect of our expect test
 function sourceTest(assert) {
   if (assert.source === 'text') return 'text()).';
   let result;
@@ -151,6 +165,7 @@ function sourceTest(assert) {
   return `props().${assert.property}).`;
 }
 
+// Special handling for state tests
 function stateTest(assert) {
   let result = `${twoSpace}wrapper = mount(<${assert.selectorName} />);${newLine}`; 
   if (assert.modifier === '') result += `${twoSpace}expect(wrapper.state().${assert.property}).`; 
@@ -159,12 +174,15 @@ function stateTest(assert) {
   return result;  
 }
 
+// How we add actions
+// TODO - special handling for on-enter? 
 function addAction(assert) {
   let result = translateLoc(assert.loc);
   result += `simulate(${assert.event});${newLine}`; 
   return result; 
 }
 
+// How we convert our address system to enzyme syntax
 function translateLoc(loc) {
   let result = `${twoSpace}wrapper.find('#${loc[0]}').`;
   for (let i = 1; i < loc.length; i++) {
@@ -174,133 +192,7 @@ function translateLoc(loc) {
 }
 
 
-
+//// Tests - remove later!!!
 generateTest(assertionList, 'App'); 
 generateTest(assertionList2, 'App'); 
 generateTest(assertionList3, 'App');
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Psuedo Tests
-// Component
-  // Check length of components
-  // Check index of component
-    // Check props
-     // prop modifier
-       // length
-       // index
-    // State? 
-
-// Tag
-  // Check length of tags
-  // Check index of tag
-    // Simulate event
-    // Check inner text
-
- // Class
-   // Check length of classes
-   // Check index of class
-     // simulate event
-     // Check inner text
-
-// Id 
-  // Simulate event
-  // Check text
-
-// Our node stuff
-  // ? // Psuedo Tests
-// Component
-  // Check length of components
-  // Check index of component
-    // Check props
-     // prop modifier
-       // length
-       // index
-    // State? 
-
-// Tag
-  // Check length of tags
-  // Check index of tag
-    // Simulate event
-    // Check inner text
-
- // Class
-   // Check length of classes
-   // Check index of class
-     // simulate event
-     // Check inner text
-
-// Id 
-  // Simulate event
-  // Check text
-
-// Our node stuff
-  // ? 
-
-
-// describe('Full Mount Test', () => {
-//   let wrapper;
-//   beforeEach(() => {
-//     wrapper = mount(<App />);
-//   });
-
-//   it('allows us to check Component length', () => {
-//    expect(wrapper.find('Row').length).to.equal(2);
-//   });
-
-//   it('allows us to props on a specific component', () => {
-//    expect(wrapper.find('Row').at(1).props().number).to.equal(6);
-//   });
-
-//   it('allows us to use a modifier on props', () => {
-//    expect(wrapper.find('Row').at(1).props().funarr[2]).to.equal(3);
-//   });
-
-//   it('allows us to find the length of a prop', () => {
-//    expect(wrapper.find('Row').at(1).props().funarr.length).to.equal(5);
-//   });
-//////////////
-//   it('allows us to check state on a component', () => {
-//    expect(wrapper.state().test).to.equal('testy');
-//   });
-
-//   it('allows us to get the length of a class list', () => {
-//    expect(wrapper.find('.imaclass').length).to.equal(2);
-//   });
-
-//   it('allows us to get the length of a class list', () => {
-//    expect(wrapper.find('.imaclass').length).to.equal(2);
-//   });
-
-//   it('allows us to get the length of a class list', () => {
-//    expect(wrapper.find('.imaclass').length).to.equal(2);
-//   });
-
-//   it('allows us to get the length of a class list', () => {
-//    expect(wrapper.find('.imaclass').length).to.equal(2);
-//   });
-
-//   it('allows us to simulate an event and read text', () => {
-//    expect(wrapper.find('#list').childAt(0).text()).to.equal('one'); 
-//    wrapper.find('#list').childAt(0).childAt(0).simulate('click');
-//    expect(wrapper.find('#list').childAt(0).text()).to.equal('two'); 
-//   });
-
-//   it('allows us to read text on an id', () => {
-//    expect(wrapper.find('#shopList').text()).to.equal('Shopping List'); 
-//   });
-// });
