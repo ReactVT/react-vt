@@ -95,7 +95,7 @@ function addBlock(block) {
 function nodeTest(assert) { 
   let name = nodeStore.address[assert.loc.toString()].name; 
   let index = nodeStore.address[assert.loc.toString()].index; 
-  let result = `${oneSpace}expect(wrapper.find('${name}').at(${index}).props().${assert.property}).`;
+  let result = `${oneSpace}expect(wrapper.find('${name}').at(${index}).props().${assert.property})`;
   result += evalTest(assert); 
   return result;
 }
