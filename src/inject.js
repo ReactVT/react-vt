@@ -2,10 +2,11 @@ const domParse = require('./dom-parse.js');
 const nodeStore = require('./nodeStore.js');
 
 const assert = require('./assert.js');
-const throttledParse = throttle(domParse.parser, 50);
+let topNode; 
 
 // importing React from example app
 function injector(React, parentNode) {
+  topNode = parentNode;
   startTraverse(parentNode);
   const func = React.Component.prototype.setState;
   React.Component.prototype.setState = function(...args) {
@@ -32,21 +33,27 @@ function injector(React, parentNode) {
 function startTraverse(self, reactDom) {
   const nodePackage = {}; 
   setTimeout(()=> {
-      nodePackage.virtualDom = throttledParse(self, reactDom);
-      nodePackage.nodeStore = nodeStore.storage;
-      // specify message type to target specific message
-      window.postMessage({ type: 'virtualdom', data: nodePackage}, "*");
-  }, 0);
+      let travPromise = throttle(domParse.parser, 25);
+      travPromise.then((result) => {
+        nodePackage.virtualDom = result; 
+        nodePackage.nodeStore = nodeStore.storage;
+        // specify message type to target specific message
+        window.postMessage({ type: 'virtualdom', data: nodePackage}, "*");
+      });}, 0);
 }
 
 function throttle(func, wait) {
- let waiting = false; 
- return function throttler(...args) {
-   if (waiting) return; 
-   waiting = true; 
-   setTimeout(() => waiting = false, wait);
-   return func(...args);
- }
+  let waiting = false; 
+  return new Promise((resolve, reject) => {
+    if (waiting) reject(); 
+    waiting = true; 
+    setTimeout(() => {
+      waiting = false;
+      let result = func(topNode);
+      resolve(result);
+    }, wait);
+   return func(topNode);
+  }); 
 }
 
 module.exports = injector;
