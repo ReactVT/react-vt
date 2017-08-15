@@ -24,7 +24,7 @@ function getNode(address) {
 }
 
 
-function actionController(current) {
+function actionController(current, blockName) {
   // We hit this if we have reached an action that hasn't been set up yet
   // We add a spy on the specified node and then stop checking this assertion block
   if (current.added === false) {
@@ -44,8 +44,8 @@ function actionController(current) {
   if (current.spy.calledOnce === true) {
     const resultMessage = {
       // TODO: this property might need to change to get assertion block name from chrome extension message
-      assertionBlock: 'currentAsserts.name placeholder',
-      assertID: 'current.assertID placeholder',
+      assertionBlock: blockName,
+      assertID: current.assertID,
       result: true,
       comparator: current.type,
     };
@@ -86,7 +86,7 @@ function checkAssert() {
       let current = currAssert.asserts[0];
       // if action
       if (current.type === 'action') {
-        if (actionController(current)) {
+        if (actionController(current, currAssert.name)) {
           currAssert.asserts.shift();
           continue;
         }
@@ -96,8 +96,8 @@ function checkAssert() {
       // Compose result message to be sent to chrome extension
       const resultMessage = {
         // TODO: this property might need to change to get assertion block name from chrome extension message
-        assertionBlock: 'currentAsserts.name placeholder',
-        assertID: 'current.assertID placeholder',
+        assertionBlock: currAssert.name,
+        assertID: current.assertID,
       };
       // current becomes the first assertion
       let result;
@@ -186,6 +186,7 @@ function addAssert(freshAssert) {
     if (curr.type === 'action') {
         // base info for every action
         let newAssert = {};
+        newAssert.assertID = curr.assertID; 
         newAssert.loc = curr.loc;
         newAssert.type = 'action';
         newAssert.event = curr.event; 
