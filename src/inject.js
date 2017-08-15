@@ -5,16 +5,17 @@ const assert = require('./assert.js');
 const throttledParse = throttle(domParse.parser, 50);
 
 // importing React from example app
-function injector(React, reactDom) {
+function injector(React, parentNode) {
+  startTraverse(parentNode);
   const func = React.Component.prototype.setState;
-  React.Component.prototype.setState = function(...args) {    
+  React.Component.prototype.setState = function(...args) {
     // set timeout to delay traverse so that it is appended to original setState
-    startTraverse(this, reactDom);
+    startTraverse(this);
     return func.apply(this, args);
   }
-
   // listens for messages from backgroundjs -> content script -> webpage
   window.addEventListener('message', function(event) {
+    console.log('message', event);
     // only accept messges to self
     if (event.source != window) return;
     // filter out other messages floating around in existing context
