@@ -65,7 +65,7 @@ describe('Full Mount Test', () => {
   });
 
   it('allows us to read text on an id', () => {
-   expect(wrapper.find('h1').at(0).text()).to.equal('Shopping List'); 
+   expect(wrapper.find('h1').at(0).text()).to.equal('Shopping Listz'); 
   });
 
 });

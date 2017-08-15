@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
+import ReactDOM from 'react-dom';
 import $ from 'jquery'; 
 import injector from './../../../../src/inject.js';
 import Row from './Row.js'; 
-injector(React);
 
 function keyPress(e){
     const keyCode = e.keyCode || e.which;
@@ -37,6 +37,7 @@ class App extends Component {
 
   componentWillMount() {
     this.getData();
+    injector(React, this);
   }
 
   editData(e, i) {
