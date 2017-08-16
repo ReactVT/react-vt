@@ -59,8 +59,8 @@ function actionController(current, blockName) {
 function modifierController(modifier, data) {
   if (modifier === '.length') {
     return data.length;
-  } else if (current.selectorModifier[0] === '[') {
-    let index = current.selectorModifier.slice(1, -1);
+  } else if (modifier[0] === '[') {
+    let index = modifier.slice(1, -1);
     return data[index];
   }
 }
@@ -70,7 +70,7 @@ function modifierController(modifier, data) {
 
 // TAKE OUT CURRENT ASSERTS FROM ARGUMENT ONCE DONE WITH DUMMY DATA
 function checkAssert() {
-  console.log('in check assert', currentAsserts)
+  console.log('in check assert', nodeStore.storage)
   // For debugging purposes, should be removed prior to release
   if (currentAsserts.length === 0) {
     console.log('no asserts to check');
@@ -92,7 +92,9 @@ function checkAssert() {
         }
         break;
       }
-
+      console.log('current', current); 
+      console.log('nodeStore', nodeStore)
+      
       // Compose result message to be sent to chrome extension
       const resultMessage = {
         // TODO: this property might need to change to get assertion block name from chrome extension message
@@ -101,51 +103,17 @@ function checkAssert() {
       };
       // current becomes the first assertion
       let result;
-      let dataToTest = getLocation(current);
-      console.log('data to test', dataToTest);
-      
-      // Check selector modifier field for input and determine value to test
-      if (current.selectorModifier) dataToTest = modifierController(current.selectorModifier, dataToTest);
-      if (current.source === 'text') dataToTest = dataToTest.innerText;
-      if (current.source === 'state') dataToTest = dataToTest.state[current.property];
-      if (current.source === 'props') dataToTest = dataToTest.props[current.property];
-
-      if (current.modifier) dataToTest = modifierController(current.modifier, dataToTest); 
+      let dataToTest;
+      if (current.selector === 'node') dataToTest = nodeTest(current);
+      if (current.selector === 'component') dataToTest = componentTest(current); 
             
-      // Converts value to the designated type
-      switch (current.dataType) {
-        case 'boolean':
-          current.value = Boolean(current.value);
-          break;
-        case 'number':
-          current.value = +current.value;
-          break;
-        case 'null':
-          current.value = null;
-          break;
-        case 'undefined':
-          current.value = undefined;
-          break;
-        case 'string':
-          break;
-        default:
-          console.log('Data type block failed');
-      }
+      // Convert our value to the specified variable type
+      current.value = convertType(current);
 
       // We hit this if the assertion is equal
       // In this case, we make the specified comparison and send the result back to the chrome extension
-      if (current.type === 'equal') {
-        result = dataToTest === current.value;
-      } else if (current.type === 'greaterthan') {
-        result = dataToTest > current.value;
-      } else if (current.type === 'lessthan') {
-        result = dataToTest < current.value;
-      }
-      // // TODO : exist and notexist condition
-      // else if (current.type === 'exist') {
-      //   result 
-      // } else if (current.type === 'notexist') {
-      // }
+      result = convertResult(current.type, dataToTest, current.value); 
+
 
       // Assign test result details to resultMessage
       resultMessage.expected = current.value;
@@ -162,6 +130,60 @@ function checkAssert() {
     // In that case, we remove the assertion block from our list of current assertion blocks
     if (currAssert.asserts.length === 0) currentAsserts.splice(i,1); 
   });
+}
+
+function componentTest(current) {
+  if (current.selectorModifier === 'length') return nodeStore.storage.node[current.selectorName].length;
+  let index = current.selectorModifier.slice(1, -1);
+  let address = nodeStore.storage.node[current.selectorName][index].toString(); 
+  console.log('address', address);
+  let dataToTest = nodeStore.storage.address[address]; 
+  console.log('datatotest', dataToTest)
+  if (current.source === 'state') dataToTest = dataToTest.state[current.property];
+  if (current.source === 'props') dataToTest = dataToTest.props[current.property];
+  if (current.modifier) dataToTest = modifierController(current.modifier, dataToTest); 
+  return dataToTest; 
+}
+
+function nodeTest(current) {
+  let dataToTest = getLocation(current);
+
+  // Check selector modifier field for input and determine value to test
+  if (current.selectorModifier) dataToTest = modifierController(current.selectorModifier, dataToTest);
+  if (current.source === 'text') dataToTest = dataToTest.innerText;
+  if (current.source === 'state') dataToTest = dataToTest.state[current.property];
+  if (current.source === 'props') dataToTest = dataToTest.props[current.property];
+  if (current.modifier) dataToTest = modifierController(current.modifier, dataToTest); 
+  return dataToTest; 
+}
+
+function convertResult(type, dataToTest, value) {
+  if (type === 'equal') {
+    return dataToTest === value;
+  } else if (type === 'greaterthan') {
+    return dataToTest > value;
+  } else if (type === 'lessthan') {
+    return dataToTest < value;
+  } else if (type === 'notEqual') {
+    return dataToTest !== value;
+  }
+}
+
+function convertType(current) {
+  switch (current.dataType) {
+    case 'boolean':
+      return Boolean(current.value);
+    case 'number':
+      return +current.value;
+    case 'null':
+      return null;
+    case 'undefined':
+      return undefined;
+    case 'string':
+      return current.value;
+    default:
+      return 'Data type block failed';
+  }
 }
 
 // Send result back to chrome extension
