@@ -24,8 +24,14 @@ function injector(React, parentNode) {
 
     }
     if (event.data.type === 'assertion') {
-      console.log("webpage received this from content script", event.data.message);
-      assert.addAssert(event.data.message);
+      if (event.data.flag === 'onload') {
+        event.data.message.forEach(item => {
+          assert.addAssert(item); 
+        });
+      } else {
+        console.log("webpage received this from content script", event.data.message);
+        assert.addAssert(event.data.message);
+      }
     }
   }, false);
 }
