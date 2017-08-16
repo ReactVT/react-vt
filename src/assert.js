@@ -105,7 +105,10 @@ function checkAssert() {
       let result;
       let dataToTest;
       if (current.selector === 'node') dataToTest = nodeTest(current);
-      if (current.selector === 'component') dataToTest = componentTest(current); 
+      if (current.selector === 'component') dataToTest = componentTest(current);
+      if (current.selector === 'id') dataToTest = idTest(current);
+      if (current.selector === 'class') dataToTest = classTest(current);
+      if (current.selector === 'tag') dataToTest = tagTest(current);
             
       // Convert our value to the specified variable type
       current.value = convertType(current);
@@ -132,6 +135,26 @@ function checkAssert() {
   });
 }
 
+function tagTest(current) {
+  if (current.selectorModifier === 'length') return nodeStore.storage.tag[current.selectorName].length;
+  let index = current.selectorModifier.slice(1, -1);
+  let address = nodeStore.storage.tag[current.selectorName][index]; 
+  let dataToTest = getNode(address); 
+  return dataToTest.innerText; 
+}
+
+function classTest(current) {
+  if (current.selectorModifier === 'length') return nodeStore.storage.class[current.selectorName].length;
+  let index = current.selectorModifier.slice(1, -1);
+  let address = nodeStore.storage.class[current.selectorName][index]; 
+  let dataToTest = getNode(address); 
+  return dataToTest.innerText; 
+}
+
+function idTest(current) {
+  return document.getElementById(current.selectorName).innerText; 
+}
+
 function componentTest(current) {
   if (current.selectorModifier === 'length') return nodeStore.storage.node[current.selectorName].length;
   let index = current.selectorModifier.slice(1, -1);
@@ -150,7 +173,7 @@ function nodeTest(current) {
 
   // Check selector modifier field for input and determine value to test
   if (current.selectorModifier) dataToTest = modifierController(current.selectorModifier, dataToTest);
-  if (current.source === 'text') dataToTest = dataToTest.innerText;
+  //if (current.source === 'text') dataToTest = dataToTest.innerText;
   if (current.source === 'state') dataToTest = dataToTest.state[current.property];
   if (current.source === 'props') dataToTest = dataToTest.props[current.property];
   if (current.modifier) dataToTest = modifierController(current.modifier, dataToTest); 
