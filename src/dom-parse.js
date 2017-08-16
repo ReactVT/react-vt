@@ -43,8 +43,19 @@ const nodeStoreController = (node, name, address, props, state, parent = false) 
     nodeStore.storage.tag[name] ? nodeStore.storage.tag[name].push(address) : nodeStore.storage.tag[name] = [address];
     nodeStore.storage.address[address].index = nodeStore.storage.tag[name].length - 1;  
   } else {
-    nodeStore.storage.node[name] ? nodeStore.storage.node[name].push(address) : nodeStore.storage.node[name] = [address];
-    nodeStore.storage.address[address].index = nodeStore.storage.node[name].length - 1;  
+    if (nodeStore.storage.node[name]) {
+      nodeStore.storage.node[name].address.push(address);
+      nodeStore.storage.node[name].state.push(state);
+      nodeStore.storage.node[name].props.push(props);
+
+    } else {
+      nodeStore.storage.node[name] = {};
+      nodeStore.storage.node[name].address = [address];
+      nodeStore.storage.node[name].state = [state];
+      nodeStore.storage.node[name].props = [props];
+    }
+
+    nodeStore.storage.address[address].index = nodeStore.storage.node[name].address.length - 1;  
     if (!parent && node._renderedComponent._hostNode.id) nodeStore.storage.id[node._renderedComponent._hostNode.id] = address;
     if (!parent && node._renderedComponent._hostNode.className) {
       const classArr = node._renderedComponent._hostNode.className.split(/\s+/);
