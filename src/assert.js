@@ -187,7 +187,7 @@ function convertResult(type, dataToTest, value) {
     return dataToTest > value;
   } else if (type === 'lessthan') {
     return dataToTest < value;
-  } else if (type === 'notEqual') {
+  } else if (type === 'notequal') {
     return dataToTest !== value;
   }
 }
