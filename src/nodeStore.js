@@ -9,12 +9,14 @@ let storage = {
   tag: {} 
 };
 
-const empty = () => storage = {
+const empty = function() {
+  storage = {
   address: {},
   id: {}, 
   class: {}, 
   node: {}, 
   tag: {} 
+}
 };
 
 module.exports = {

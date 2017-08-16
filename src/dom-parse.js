@@ -58,8 +58,13 @@ const nodeStoreController = (node, name, address, props, state, parent = false) 
 }
 
 const ReactParentTraverse = (dom) => {
-  console.log('in parent');
-  nodeStore.empty();
+  nodeStore.storage = {
+  address: {},
+  id: {}, 
+  class: {}, 
+  node: {}, 
+  tag: {} 
+  }; 
   // This grabs the name of the top component, will be needed for when we generate enzyme test files.. 
   appName = dom.constructor.name;
 
