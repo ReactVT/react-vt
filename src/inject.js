@@ -2,7 +2,8 @@ const domParse = require('./dom-parse.js');
 const nodeStore = require('./nodeStore.js');
 
 const assert = require('./assert.js');
-let topNode; 
+let topNode;
+let firstPass = true;  
 
 // importing React from example app
 function injector(React, parentNode) {
@@ -46,7 +47,8 @@ function startTraverse(self, reactDom) {
         nodePackage.virtualDom = result; 
         nodePackage.nodeStore = nodeStore.storage;
         // specify message type to target specific message
-        window.postMessage({ type: 'virtualdom', data: nodePackage}, "*");
+        window.postMessage({ type: 'virtualdom', data: nodePackage, first: firstPass}, "*");
+        firstPass = false; 
       });}, 0);
 }
 
