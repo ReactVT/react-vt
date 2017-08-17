@@ -26,22 +26,69 @@ const parser = (dom, reactDom) => {
   return ReactParentTraverse(dom);
 };
 
-const nodeStoreController = (node, name, address, props, state) => {
+
+// THIS NEEDS TO BE CLEANED UP!
+const nodeStoreController = (node, name, address, props, state, parent = false) => {
   nodeStore.storage.address[address] = {};
   nodeStore.storage.address[address].state = state;
   nodeStore.storage.address[address].props = props;
-  if (props.id) nodeStore.storage.id[props.id] = address; 
-  if (props.className) {
-    if (nodeStore.storage.class[props.className]) nodeStore.storage.class[props.className].push(address)
-    else nodeStore.storage.class[props.className] = [address];
+  nodeStore.storage.address[address].name = name;
+  let classArr;  
+
+  if (props.id && node.constructor.name === 'ReactDOMComponent') nodeStore.storage.id[props.id] = address; 
+  
+  if (props.className && node.constructor.name === 'ReactDOMComponent') {
+    classArr = props.className.split(/\s+/);
+    classArr.forEach(newclass => {
+      if (nodeStore.storage.class[newclass]) nodeStore.storage.class[newclass].push(address)
+      else nodeStore.storage.class[newclass] = [address];
+    });
   }
-  if (node.constructor.name === 'ReactDOMComponent') nodeStore.storage.tag[name] ? nodeStore.storage.tag[name].push(address) : nodeStore.storage.tag[name] = [address];
-  else nodeStore.storage.node[name] ? nodeStore.storage.node[name].push(address) : nodeStore.storage.node[name] = [address];
+
+  if (node.constructor.name === 'ReactDOMComponent') {
+    nodeStore.storage.tag[name] ? nodeStore.storage.tag[name].push(address) : nodeStore.storage.tag[name] = [address];
+    nodeStore.storage.address[address].index = nodeStore.storage.tag[name].length - 1;  
+  } else {
+
+    if (nodeStore.storage.node[name]) {
+      nodeStore.storage.node[name].address.push(address);
+      nodeStore.storage.node[name].state.push(state);
+      nodeStore.storage.node[name].props.push(props);
+
+    } else {
+      nodeStore.storage.node[name] = {};
+      nodeStore.storage.node[name].address = [address];
+      nodeStore.storage.node[name].state = [state];
+      nodeStore.storage.node[name].props = [props];
+    }
+
+    nodeStore.storage.address[address].index = nodeStore.storage.node[name].address.length - 1;
+
+    if (!parent) {
+      if (node._renderedComponent._hostNode.id) nodeStore.storage.id[node._renderedComponent._hostNode.id] = address;
+      if (node._renderedComponent._hostNode.className) {
+        classArr = node._renderedComponent._hostNode.className.split(/\s+/);
+        classArr.forEach(item => {
+          if (nodeStore.storage.class[item]) nodeStore.storage.class[item].push(address)
+          else nodeStore.storage.class[item] = [address];
+        });
+      }
+    } else {
+
+    } 
+  }
 
 }
 
 const ReactParentTraverse = (dom) => {
-  nodeStore.empty();
+  console.log('parent', dom);
+  nodeStore.storage = {
+  address: {},
+  id: {}, 
+  class: {}, 
+  node: {}, 
+  tag: {} 
+  }; 
   // This grabs the name of the top component, will be needed for when we generate enzyme test files.. 
   appName = dom.constructor.name;
 
@@ -55,9 +102,10 @@ const ReactParentTraverse = (dom) => {
   data.props = dom.props; 
   data.state = dom.state;
   data.address = data.props.id ? [data.props.id] : [dom._reactInternalInstance._hostContainerInfo._node.id, 0];
-
+  data.id = dom._reactInternalInstance._renderedComponent._hostContainerInfo._node.id; 
+  data.class = dom._reactInternalInstance._renderedComponent._hostContainerInfo._node.className; 
   // Add necessary data to nodeStore
-  nodeStoreController(dom, data.name, data.address, data.props, data.state);
+  nodeStoreController(dom, data.name, data.address, data.props, data.state, true);
 
   data.children = [];
 
@@ -75,7 +123,6 @@ const ReactParentTraverse = (dom) => {
       if (child.constructor.name !== 'ReactDOMTextComponent') data.children.push(ReactChildTraverse(child, address));
     });
   }
-
   assert.checkAssert();
   return data;
 };
@@ -97,7 +144,9 @@ const ReactChildTraverse = (child, address) => {
     if (newProps.children) delete newProps.children; 
     childData.props = cloneDeep(newProps);
     children = child._renderedComponent._renderedChildren;
-    childData.address = child._instance.props.id ? [child._instance.props.id] : address; 
+    childData.address = child._renderedComponent._hostNode.id ? [child._renderedComponent._hostNode.id] : address; 
+    childData.id = child._renderedComponent._hostNode.id;
+    childData.class = child._renderedComponent._hostNode.className; 
   } else {
     // Parsing logic for dumb React Components
     childData.name = child._currentElement.type;
@@ -107,14 +156,11 @@ const ReactChildTraverse = (child, address) => {
     var newProps = child._currentElement.props !== null ? Object.assign({}, child._currentElement.props) : null; 
     if (newProps.children) delete newProps.children; 
     childData.props = cloneDeep(newProps);
+    childData.id = childData.props.id; 
+    childData.class = childData.props.className; 
     children = child._renderedChildren;
   }
 
-  // Store the props and state of the object on a nodeStore so that we can easily reference these for assertions
-  // let addressString = childData.address.toString();
-  // nodeStore.storage.address[addressString] = {};
-  // nodeStore.storage.address[addressString].state = childData.state;
-  // nodeStore.storage.address[addressString].props = childData.props; 
   nodeStoreController(child, childData.name, childData.address, childData.props, childData.state);
 
   // filter out text nodes from children
@@ -133,6 +179,8 @@ const ReactChildTraverse = (child, address) => {
         }
       });
   }
+  if (childData.props.id) delete childData.props.id; 
+  if (childData.props.className) delete childData.props.className;  
   return childData;
 };
 
