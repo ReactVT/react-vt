@@ -263,7 +263,17 @@ function addAssert(freshAssert) {
   currentAsserts.push(assertBundle);
 }
 
+function deleteBlock(name) {
+  for (let i = 0; i < currentAsserts.length; i++) {
+    if (currentAsserts[i].name === name) {
+      currentAsserts.splice(i, 1);
+      break; 
+    }
+  }
+}
+
 module.exports = {
   checkAssert,
   addAssert,
+  deleteBlock,
 }

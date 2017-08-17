@@ -28,6 +28,8 @@ function injector(React, parentNode) {
         event.data.message.forEach(item => {
           assert.addAssert(item); 
         });
+      } else if (event.data.flag === 'delete') {
+        assert.deleteBlock(event.data.message);
       } else {
         console.log("webpage received this from content script", event.data.message);
         assert.addAssert(event.data.message);
