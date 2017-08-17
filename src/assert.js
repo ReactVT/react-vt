@@ -92,8 +92,8 @@ function checkAssert() {
         }
         break;
       }
-      console.log('current', current); 
-      console.log('nodeStore', nodeStore)
+      console.log('current ass', current);
+      console.log('nodestore', nodeStore.storage); 
       
       // Compose result message to be sent to chrome extension
       const resultMessage = {
@@ -156,9 +156,9 @@ function idTest(current) {
 }
 
 function componentTest(current) {
-  if (current.selectorModifier === 'length') return nodeStore.storage.node[current.selectorName].length;
+  if (current.selectorModifier === 'length') return nodeStore.storage.node[current.selectorName].address.length;
   let index = current.selectorModifier.slice(1, -1);
-  let address = nodeStore.storage.node[current.selectorName][index].toString(); 
+  let address = nodeStore.storage.node[current.selectorName].address[index].toString(); 
   console.log('address', address);
   let dataToTest = nodeStore.storage.address[address]; 
   console.log('datatotest', dataToTest)
