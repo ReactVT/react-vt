@@ -136,7 +136,7 @@ function checkAssert() {
 }
 
 function tagTest(current) {
-  if (current.selectorModifier === 'length') return nodeStore.storage.tag[current.selectorName].length;
+  if (current.selectorModifier === '.length') return nodeStore.storage.tag[current.selectorName].length;
   let index = current.selectorModifier.slice(1, -1);
   let address = nodeStore.storage.tag[current.selectorName][index]; 
   let dataToTest = getNode(address); 
@@ -144,7 +144,7 @@ function tagTest(current) {
 }
 
 function classTest(current) {
-  if (current.selectorModifier === 'length') return nodeStore.storage.class[current.selectorName].length;
+  if (current.selectorModifier === '.length') return nodeStore.storage.class[current.selectorName].length;
   let index = current.selectorModifier.slice(1, -1);
   let address = nodeStore.storage.class[current.selectorName][index]; 
   let dataToTest = getNode(address); 
@@ -156,7 +156,7 @@ function idTest(current) {
 }
 
 function componentTest(current) {
-  if (current.selectorModifier === 'length') return nodeStore.storage.node[current.selectorName].address.length;
+  if (current.selectorModifier === '.length') return nodeStore.storage.node[current.selectorName].address.length;
   let index = current.selectorModifier.slice(1, -1);
   let address = nodeStore.storage.node[current.selectorName].address[index].toString(); 
   console.log('address', address);
