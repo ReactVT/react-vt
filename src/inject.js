@@ -46,8 +46,9 @@ function startTraverse(self, reactDom) {
       travPromise.then((result) => {
         nodePackage.virtualDom = result; 
         nodePackage.nodeStore = nodeStore.storage;
+        let title = document.title;
         // specify message type to target specific message
-        window.postMessage({ type: 'virtualdom', data: nodePackage, first: firstPass}, "*");
+        window.postMessage({ type: 'virtualdom', data: nodePackage, topNode: topNode.constructor.name, title: title, first: firstPass}, "*");
         firstPass = false; 
       });}, 0);
 }
