@@ -261,6 +261,7 @@ function addAssert(freshAssert) {
 
   // Grab our new bundle and add it our current assert queue
   currentAsserts.push(assertBundle);
+  checkAssert();
 }
 
 function deleteBlock(name) {
