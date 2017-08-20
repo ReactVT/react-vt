@@ -74,6 +74,14 @@ const nodeStoreController = (node, name, address, props, state, parent = false) 
         });
       }
     } else {
+      if (node._reactInternalInstance._renderedComponent._hostContainerInfo._node.id) nodeStore.storage.id[node._reactInternalInstance._renderedComponent._hostContainerInfo._node.id] = address;
+      if (node._reactInternalInstance._renderedComponent._hostContainerInfo._node.className) {
+        classArr = node._reactInternalInstance._renderedComponent._hostContainerInfo._node.className.split(/\s+/);
+        classArr.forEach(item => {
+          if (nodeStore.storage.class[item]) nodeStore.storage.class[item].push(address)
+          else nodeStore.storage.class[item] = [address];
+        });
+      }
 
     } 
   }
