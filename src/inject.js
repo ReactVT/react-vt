@@ -17,7 +17,6 @@ function injector(React, parentNode) {
   }
   // listens for messages from backgroundjs -> content script -> webpage
   window.addEventListener('message', function(event) {
-    console.log('message', event);
     // only accept messges to self
     if (event.source != window) return;
     // filter out other messages floating around in existing context
@@ -32,7 +31,6 @@ function injector(React, parentNode) {
       } else if (event.data.flag === 'delete') {
         assert.deleteBlock(event.data.message);
       } else {
-        console.log("webpage received this from content script", event.data.message);
         assert.addAssert(event.data.message);
       }
     }
