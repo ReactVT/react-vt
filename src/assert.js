@@ -37,12 +37,11 @@ function actionController(current, blockName) {
 
   // We hit this if our current assert is an action that has not happened yet
   // We stop checking this assertion block
-  if (current.spy.calledOnce === false) return false;
+  const enterEvent = (current.event === 'keypress' && current.spy.called && current.spy.args[current.spy.args.length - 1][0].key === 'Enter'); 
 
   // We hit this if our current assert is an action that has happened
   // We remove the assertion from the assertion block and then we go to the next while loop cycle
-  if (current.spy.calledOnce === true) {
-    console.log('action called', current);
+  if (enterEvent || current.spy.calledOnce === true) {
     const resultMessage = {
       // TODO: this property might need to change to get assertion block name from chrome extension message
       assertionBlock: blockName,
@@ -54,6 +53,9 @@ function actionController(current, blockName) {
     console.log('result message to be sent back', resultMessage);
     return true;
   }
+
+  return false;
+
 
 }
 
@@ -233,6 +235,7 @@ function addAssert(freshAssert) {
       // This is how we will handle our first action in the assertion bundle
       // For this one, we will add a spy  
       if (!actionAdded) {
+        console.log('adding first action', curr); 
         let spy = sinon.spy();
         getNode(curr.loc).addEventListener(curr.event, spy);
         newAssert.spy = spy; 
