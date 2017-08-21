@@ -6,7 +6,6 @@ const nodeStore = require('./nodeStore.js');
 let currentAsserts = [];
 
 function getLocation(assertion) {
-  console.log('in assertion', assertion); 
   if (assertion.selector === 'node') return nodeStore.storage.address[assertion.loc.toString()];
   if (assertion.selector === 'id') return document.getElementById(assertion.selectorName);
   if (assertion.selector === 'class') return document.getElementsByClassName(assertion.selectorName);
@@ -25,6 +24,7 @@ function getNode(address) {
 
 
 function actionController(current, blockName) {
+  console.log('in action', current); 
   // We hit this if we have reached an action that hasn't been set up yet
   // We add a spy on the specified node and then stop checking this assertion block
   if (current.added === false) {
@@ -37,11 +37,11 @@ function actionController(current, blockName) {
 
   // We hit this if our current assert is an action that has not happened yet
   // We stop checking this assertion block
-  if (current.spy.calledOnce === false) return false;
+  const enterEvent = (current.event === 'keypress' && current.spy.called && current.spy.args[current.spy.args.length - 1][0].key === 'Enter'); 
 
   // We hit this if our current assert is an action that has happened
   // We remove the assertion from the assertion block and then we go to the next while loop cycle
-  if (current.spy.calledOnce === true) {
+  if (enterEvent || current.spy.calledOnce === true) {
     const resultMessage = {
       // TODO: this property might need to change to get assertion block name from chrome extension message
       assertionBlock: blockName,
@@ -53,6 +53,9 @@ function actionController(current, blockName) {
     console.log('result message to be sent back', resultMessage);
     return true;
   }
+
+  return false;
+
 
 }
 
@@ -70,10 +73,8 @@ function modifierController(modifier, data) {
 
 // TAKE OUT CURRENT ASSERTS FROM ARGUMENT ONCE DONE WITH DUMMY DATA
 function checkAssert() {
-  console.log('in check assert', nodeStore.storage)
   // For debugging purposes, should be removed prior to release
   if (currentAsserts.length === 0) {
-    console.log('no asserts to check');
     return;
   }
 
@@ -92,8 +93,6 @@ function checkAssert() {
         }
         break;
       }
-      console.log('current ass', current);
-      console.log('nodestore', nodeStore.storage); 
       
       // Compose result message to be sent to chrome extension
       const resultMessage = {
@@ -159,9 +158,7 @@ function componentTest(current) {
   if (current.selectorModifier === '.length') return nodeStore.storage.node[current.selectorName].address.length;
   let index = current.selectorModifier.slice(1, -1);
   let address = nodeStore.storage.node[current.selectorName].address[index].toString(); 
-  console.log('address', address);
   let dataToTest = nodeStore.storage.address[address]; 
-  console.log('datatotest', dataToTest)
   if (current.source === 'state') dataToTest = dataToTest.state[current.property];
   if (current.source === 'props') dataToTest = dataToTest.props[current.property];
   if (current.modifier) dataToTest = modifierController(current.modifier, dataToTest); 
@@ -238,6 +235,7 @@ function addAssert(freshAssert) {
       // This is how we will handle our first action in the assertion bundle
       // For this one, we will add a spy  
       if (!actionAdded) {
+        console.log('adding first action', curr); 
         let spy = sinon.spy();
         getNode(curr.loc).addEventListener(curr.event, spy);
         newAssert.spy = spy; 
@@ -261,6 +259,7 @@ function addAssert(freshAssert) {
 
   // Grab our new bundle and add it our current assert queue
   currentAsserts.push(assertBundle);
+  checkAssert();
 }
 
 function deleteBlock(name) {

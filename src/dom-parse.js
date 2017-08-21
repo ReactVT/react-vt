@@ -22,7 +22,7 @@ function cloneDeep(value) {
 }
 
 const parser = (dom, reactDom) => {
-  if (dom.constructor.name === 'Connect') return ReduxParentTraverse(dom, reactDom);
+  if (dom._reactInternalInstance._context.router) return 'reactRouter';
   return ReactParentTraverse(dom);
 };
 
@@ -74,6 +74,14 @@ const nodeStoreController = (node, name, address, props, state, parent = false) 
         });
       }
     } else {
+      if (node._reactInternalInstance._renderedComponent._hostContainerInfo._node.id) nodeStore.storage.id[node._reactInternalInstance._renderedComponent._hostContainerInfo._node.id] = address;
+      if (node._reactInternalInstance._renderedComponent._hostContainerInfo._node.className) {
+        classArr = node._reactInternalInstance._renderedComponent._hostContainerInfo._node.className.split(/\s+/);
+        classArr.forEach(item => {
+          if (nodeStore.storage.class[item]) nodeStore.storage.class[item].push(address)
+          else nodeStore.storage.class[item] = [address];
+        });
+      }
 
     } 
   }
@@ -81,7 +89,6 @@ const nodeStoreController = (node, name, address, props, state, parent = false) 
 }
 
 const ReactParentTraverse = (dom) => {
-  console.log('parent', dom);
   nodeStore.storage = {
   address: {},
   id: {}, 

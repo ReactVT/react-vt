@@ -3,7 +3,6 @@ import React, { Component } from 'react';
 import Row from './Row';
 import GameList from './GameList';
 import injector from './../../../../src/inject.js';
-injector(React);
 
 let gameStore = [];
 
@@ -77,6 +76,10 @@ class App extends Component {
 
   componentDidUpdate() {
     console.log('did update');
+  }
+
+  componentWillMount() {
+    injector(React, this);
   }
 
   handleClick(row, square) {
