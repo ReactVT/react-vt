@@ -6,7 +6,6 @@ const nodeStore = require('./nodeStore.js');
 let currentAsserts = [];
 
 function getLocation(assertion) {
-  console.log('in assertion', assertion); 
   if (assertion.selector === 'node') return nodeStore.storage.address[assertion.loc.toString()];
   if (assertion.selector === 'id') return document.getElementById(assertion.selectorName);
   if (assertion.selector === 'class') return document.getElementsByClassName(assertion.selectorName);
@@ -70,10 +69,8 @@ function modifierController(modifier, data) {
 
 // TAKE OUT CURRENT ASSERTS FROM ARGUMENT ONCE DONE WITH DUMMY DATA
 function checkAssert() {
-  console.log('in check assert', nodeStore.storage)
   // For debugging purposes, should be removed prior to release
   if (currentAsserts.length === 0) {
-    console.log('no asserts to check');
     return;
   }
 
@@ -92,8 +89,6 @@ function checkAssert() {
         }
         break;
       }
-      console.log('current ass', current);
-      console.log('nodestore', nodeStore.storage); 
       
       // Compose result message to be sent to chrome extension
       const resultMessage = {
@@ -159,9 +154,7 @@ function componentTest(current) {
   if (current.selectorModifier === '.length') return nodeStore.storage.node[current.selectorName].address.length;
   let index = current.selectorModifier.slice(1, -1);
   let address = nodeStore.storage.node[current.selectorName].address[index].toString(); 
-  console.log('address', address);
   let dataToTest = nodeStore.storage.address[address]; 
-  console.log('datatotest', dataToTest)
   if (current.source === 'state') dataToTest = dataToTest.state[current.property];
   if (current.source === 'props') dataToTest = dataToTest.props[current.property];
   if (current.modifier) dataToTest = modifierController(current.modifier, dataToTest); 
