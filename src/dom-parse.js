@@ -22,7 +22,7 @@ function cloneDeep(value) {
 }
 
 const parser = (dom, reactDom) => {
-  if (dom.constructor.name === 'Connect') return ReduxParentTraverse(dom, reactDom);
+  if (dom._reactInternalInstance._context.router) return 'reactRouter';
   return ReactParentTraverse(dom);
 };
 
