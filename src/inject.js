@@ -20,14 +20,13 @@ function injector(React, parentNode) {
     // only accept messges to self
     if (event.source != window) return;
     // filter out other messages floating around in existing context
-    if (event.data.type === 'onLoad') {
 
-    }
     if (event.data.type === 'assertion') {
       if (event.data.flag === 'onload') {
         event.data.message.forEach(item => {
           assert.addAssert(item); 
         });
+        startTraverse(parentNode);
       } else if (event.data.flag === 'delete') {
         assert.deleteBlock(event.data.message);
       } else {
