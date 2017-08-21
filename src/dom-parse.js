@@ -89,7 +89,6 @@ const nodeStoreController = (node, name, address, props, state, parent = false) 
 }
 
 const ReactParentTraverse = (dom) => {
-  console.log('parent', dom);
   nodeStore.storage = {
   address: {},
   id: {}, 

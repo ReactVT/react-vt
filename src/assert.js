@@ -24,6 +24,7 @@ function getNode(address) {
 
 
 function actionController(current, blockName) {
+  console.log('in action', current); 
   // We hit this if we have reached an action that hasn't been set up yet
   // We add a spy on the specified node and then stop checking this assertion block
   if (current.added === false) {
@@ -41,6 +42,7 @@ function actionController(current, blockName) {
   // We hit this if our current assert is an action that has happened
   // We remove the assertion from the assertion block and then we go to the next while loop cycle
   if (current.spy.calledOnce === true) {
+    console.log('action called', current);
     const resultMessage = {
       // TODO: this property might need to change to get assertion block name from chrome extension message
       assertionBlock: blockName,
