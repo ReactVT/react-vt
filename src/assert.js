@@ -30,15 +30,20 @@ function actionController(current, blockName) {
   if (current.added === false) {
     current.added = true; 
     const spy = sinon.spy();
-    getNode(current.loc).addEventListener(current.event, spy);
+    let currNode = getNode(current.loc);
+    currNode.addEventListener(current.event, spy);
+    if (current.event === 'keypress') {
+      current.lastInput = '';
+      currNode.addEventListener(current.event, () => current.lastInput = currNode.value);
+    }
     current.spy = spy; 
     return false; 
   }
 
   // We hit this if our current assert is an action that has not happened yet
   // We stop checking this assertion block
-  const enterEvent = (current.event === 'keypress' && current.spy.called && current.spy.args[current.spy.args.length - 1][0].key === 'Enter'); 
-
+  const enterEvent = (current.event === 'keypress' && current.spy.called && current.spy.args[current.spy.args.length - 1][0].key === 'Enter' && current.lastInput === current.inputValue); 
+  if (enterEvent) console.log('in event OKAY', current.lastInput);
   // We hit this if our current assert is an action that has happened
   // We remove the assertion from the assertion block and then we go to the next while loop cycle
   if (enterEvent || current.spy.calledOnce === true) {
@@ -231,18 +236,25 @@ function addAssert(freshAssert) {
         newAssert.assertID = curr.assertID; 
         newAssert.loc = curr.loc;
         newAssert.type = 'action';
-        newAssert.event = curr.event; 
+        newAssert.event = curr.event;
+        newAssert.inputValue = curr.inputValue; 
+
       // This is how we will handle our first action in the assertion bundle
       // For this one, we will add a spy  
       if (!actionAdded) {
         console.log('adding first action', curr); 
         let spy = sinon.spy();
-        getNode(curr.loc).addEventListener(curr.event, spy);
+        let currNode = getNode(curr.loc)
+        currNode.addEventListener(curr.event, spy);
         newAssert.spy = spy; 
         newAssert.added = true;
 
         // Here we set our flag so that we only add one spy to this bundle at this time
-        actionAdded = true;    
+        actionAdded = true;
+        if (curr.event === 'keypress') {
+            newAssert.lastInput = '';
+           currNode.addEventListener(curr.event, () => newAssert.lastInput = currNode.value);
+        }
       } else {
         // Any actions other than the first will get no spy and have the added property be false
         newAssert.added = false; 
