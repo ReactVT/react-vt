@@ -13,7 +13,7 @@ Run npm install for React VT in your root project folder
 npm install --save-dev react-vt
 ```
 
-Import React VT in your top-level component and use your imported React class and the 'this' as arguments to React VT in the componentWillMount lifecycle.
+Import React VT in your top-level component and use your imported React class and 'this' as arguments to React VT in the componentWillMount lifecycle.
 ```javascript
 import React, { Component } from 'react';
 // Add import statement
