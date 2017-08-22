@@ -24,7 +24,6 @@ function getNode(address) {
 
 
 function actionController(current, blockName) {
-  console.log('in action', current); 
   // We hit this if we have reached an action that hasn't been set up yet
   // We add a spy on the specified node and then stop checking this assertion block
   if (current.added === false) {
@@ -43,7 +42,6 @@ function actionController(current, blockName) {
   // We hit this if our current assert is an action that has not happened yet
   // We stop checking this assertion block
   const enterEvent = (current.event === 'keypress' && current.spy.called && current.spy.args[current.spy.args.length - 1][0].key === 'Enter' && current.lastInput === current.inputValue); 
-  if (enterEvent) console.log('in event OKAY', current.lastInput);
   // We hit this if our current assert is an action that has happened
   // We remove the assertion from the assertion block and then we go to the next while loop cycle
   if (enterEvent || current.spy.calledOnce === true) {
@@ -55,13 +53,9 @@ function actionController(current, blockName) {
       comparator: current.type,
     };
     sendResult(resultMessage);
-    console.log('result message to be sent back', resultMessage);
     return true;
   }
-
   return false;
-
-
 }
 
 function modifierController(modifier, data) {
@@ -127,9 +121,6 @@ function checkAssert() {
       resultMessage.actual = dataToTest;
       resultMessage.comparator = current.type;
       resultMessage.result = result;
-
-      console.log('result is ', result); 
-      console.log('result message to be sent back', resultMessage);
       sendResult(resultMessage);
       currAssert.asserts.shift();
     }
@@ -242,7 +233,6 @@ function addAssert(freshAssert) {
       // This is how we will handle our first action in the assertion bundle
       // For this one, we will add a spy  
       if (!actionAdded) {
-        console.log('adding first action', curr); 
         let spy = sinon.spy();
         let currNode = getNode(curr.loc)
         currNode.addEventListener(curr.event, spy);

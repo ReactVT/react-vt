@@ -192,7 +192,7 @@ const ReactChildTraverse = (child, address) => {
 };
 
 
-/////////////// REDUX LOGIC //////////////////
+/////////////// ROUTER LOGIC //////////////////
 
 
 // const ReduxParentTraverse = (dom, reactDom) => {
