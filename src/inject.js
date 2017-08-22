@@ -41,13 +41,19 @@ function startTraverse(self, reactDom) {
   setTimeout(()=> {
       let travPromise = throttle(domParse.parser, 25);
       travPromise.then((result) => {
-        nodePackage.virtualDom = result; 
-        nodePackage.nodeStore = nodeStore.storage;
-        let title = document.title;
-        // specify message type to target specific message
-        window.postMessage({ type: 'virtualdom', data: nodePackage, topNode: topNode.constructor.name, title: title, first: firstPass}, "*");
-        firstPass = false; 
-      });}, 0);
+        // Conditional to display feedback for react router incompatibility
+        if (result === 'react-router') {
+          window.postMessage({ type: 'virtualdom', data: 'react-router' }, "*");
+        } else {
+          nodePackage.virtualDom = result;
+          nodePackage.nodeStore = nodeStore.storage;
+          let title = document.title;
+          // specify message type to target specific message
+          window.postMessage({ type: 'virtualdom', data: nodePackage, topNode: topNode.constructor.name, title: title, first: firstPass}, "*");
+          firstPass = false;
+        }
+      });
+  }, 0);
 }
 
 function throttle(func, wait) {
