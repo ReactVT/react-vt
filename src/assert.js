@@ -38,13 +38,15 @@ function actionController(current, blockName) {
     current.spy = spy; 
     return false; 
   }
-
+  
+  console.log('checking action', current.spy.called);
   // We hit this if our current assert is an action that has not happened yet
   // We stop checking this assertion block
   const enterEvent = (current.event === 'keypress' && current.spy.called && current.spy.args[current.spy.args.length - 1][0].key === 'Enter' && current.lastInput === current.inputValue); 
+  if (current.event === 'keypress' && !enterEvent) return false; 
   // We hit this if our current assert is an action that has happened
   // We remove the assertion from the assertion block and then we go to the next while loop cycle
-  if (enterEvent || current.spy.calledOnce === true) {
+  if (enterEvent || current.spy.called === true) {
     const resultMessage = {
       // TODO: this property might need to change to get assertion block name from chrome extension message
       assertionBlock: blockName,
