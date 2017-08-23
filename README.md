@@ -51,16 +51,16 @@ it('should render a button', () => {...});
 ```
 2. To create an action, click on a tree node in order to specify the component that the action will be done on and select an action type.
 3. To create a test:
-  i. Select target
+  1. Select target
     * Node: Selected tree node, which refers to a component
     * Component: Specify a component o test the number of components (length) or a particular component (index)
     * ID: Select an element by ID to test text content
     * Class: Select elements by class to test the number of elements that match the className (length) or a particular element of the class (index)
     * Tag: Select a tag type to select elements that are not categorized as class or ID
-  ii. Select source: state, props, or both will show up as selections if they exist. Only text is available as a source with ID, class, and tag targets.  
+  2. Select source: state, props, or both will show up as selections if they exist. Only text is available as a source with ID, class, and tag targets.  
     * Property: Select a property within the state or props
     * Modifier: If the property value is an array, a modifier is available to select either the length or an index to select an element from the array
-   iii. Set Expectation
+   3. Set Expectation
     * Select the data type for the expectation to compare to - string, number, boolean, undefined, and null are available
     * Select a comparator - equal, not equal, greater than, and less than are available
     * Set the expected value
