@@ -13,7 +13,6 @@ function getInitialState() {
       ['', '', ''],
       ['', '', ''],
     ],
-    something: true,
     turn: 'X',
     winner: undefined,
     gameList: gameStore,
