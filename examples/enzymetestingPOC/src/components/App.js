@@ -54,6 +54,13 @@ class App extends Component {
   }
 
   getData() {
+
+        // let bigArr = [];
+        // for (let i = 0; i < 500; i++) {
+        //   bigArr.push(i);
+        // }
+        // this.setState({list: bigArr});
+
         this.setState({list: ['one', 'two', 'three', 'four', 'five', 'six']});
   }
 
