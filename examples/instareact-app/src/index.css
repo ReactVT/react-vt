@@ -1,0 +1,174 @@
+body {
+  font-family: Helvetica;
+}
+
+#header {
+  text-align: center;
+  height: 50px; 
+  vertical-align: middle;
+  display: flex;
+}
+
+#leftHeader {
+  float: left;
+  list-style: none; 
+}
+
+#rightBorder {
+  border-right: 1px solid #000000; 
+}
+
+#leftHeader li {
+  display: inline;
+  padding: 0px;
+  padding-bottom: 10px;
+  padding-right: 20px;
+  vertical-align: middle; 
+  margin: auto;
+}
+
+#leftHeader i {
+  vertical-align: middle; 
+}
+
+#leftHeader img {
+  width: 120px;
+  vertical-align: middle; 
+}
+
+#leftHeader {
+  margin-left: 100px;
+  padding-bottom: 20px;
+  height: 100%;
+}
+
+#rightHeader {
+  float: right;
+  list-style: none;
+  margin-right: 200px; 
+  color: rgb(100, 100, 100);
+}
+
+#rightHeader li {
+  display: inline;
+  padding: 10px;
+}
+
+#search {
+  margin: auto;
+  margin-top: 20px;
+  text-align: center;
+  vertical-align: middle; 
+  font-size: 14px;
+  width: 200px; 
+  padding: 5px 10px;
+}
+
+#search:focus {
+  text-align: left; 
+}
+
+.post {
+  width: 600px;
+  border: 1px solid rgb(230, 230, 230);
+  margin: 50px auto;
+  border-radius: 3px; 
+
+}
+
+.postHeader {
+  height: 70px;
+  padding: 15px;
+  padding-bottom: 0;
+}
+
+#feed {
+  text-align: center;
+  width: 100%; 
+  margin: auto;
+}
+
+.logoPic {
+  height: 75%;
+  display: inline-block;
+  float: left;
+  border-radius: 50%;
+}
+
+.postPic {
+  width: 100%;
+}
+
+.headerText {
+  display: inline-block;
+  float: left;
+  padding-left: 20px;
+  text-align: left; 
+}
+
+.headerText p{
+  margin: 5px;
+  padding: 0px;
+  font-size: 15px;
+}
+
+.name {
+  font-weight: 600; 
+  font-size: 16px;
+}
+
+.location {
+  font-weight: 300;
+}
+
+.date {
+  display: inline-block;
+  float: right;
+}
+
+.likes {
+  text-align: left; 
+  margin-left: 20px;
+  font-weight: 700;  
+}
+
+.comments {
+  text-align: left; 
+  margin-left: 20px; 
+}
+
+.comment {
+  margin: 10px 0;
+  text-align: left;
+}
+.userLink {
+  font-weight: 700;
+  margin-right: 5px;
+}
+
+.social {
+  text-align: left; 
+  border-top: 1px solid rgb(230, 230, 230);
+  margin: 20px;
+  padding-top: 20px;
+  margin-bottom: 15px;
+
+}
+
+.addComment {
+  font-size: 16px;
+  padding: 5px;
+  width: 500px;
+  vertical-align: middle;
+  margin-top: -15px;
+  margin-left: 10px; 
+  border: none;
+}
+
+.addComment:focus {
+  outline: none;
+}
+
+.liked {
+  color: #ED4956; 
+}
