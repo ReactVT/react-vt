@@ -30,8 +30,8 @@ class App extends Component {
 }
 ```
 
-3. Install the React VT Chrome Developer Tool from the Chrome store: 
-https://chrome.google.com/webstore/detail/react-vt/aphjepidficfgphkbggojoemgpmianhi?hl=en
+3. Install the React VT Chrome Developer Tool from the [Chrome Store](https://chrome.google.com/webstore/detail/react-vt/aphjepidficfgphkbggojoemgpmianhi?hl=en). 
+
 
 4. Run your React application in Chrome
 
@@ -41,8 +41,8 @@ https://chrome.google.com/webstore/detail/react-vt/aphjepidficfgphkbggojoemgpmia
 
 ### Terminology 
 * Assertion Block: An assertion block is a collection of actions and tests to define your assertion. This is analogous to *it* statements in Mocha tests. At least one test or action is required for an assertion block to be valid.
-* Action: Actions can be added to your assertion block to build your test case. Click, double click, right click, and enter are available as actions. Enzyme exports are currently unsupported for Enter actions.
-* Test: Basic equal, not equal, greater than and less than comparisons can be done on props, state, and text nodes. 
+* Action: Actions can be added to your assertion block to build your test case. Click, double click, right click, and enter are available as actions. **Enzyme exports are currently unsupported for Enter actions**.
+* Test: Equal, not equal, greater than and less than comparisons can be done on props, state, and text nodes. 
 
 ### Creating an assertion block
 1. Click on new assertion block and enter a name - e.g. 'should render a button'. This will be the statement that will appear on an exported Enzyme test: 
@@ -53,7 +53,7 @@ it('should render a button', () => {...});
 3. To create a test:
     1. Select target
         * Node: Selected tree node, which refers to a component
-        * Component: Specify a component o test the number of components (length) or a particular component (index)
+        * Component: Specify a component to test the number of components (length) or a particular component (index)
         * ID: Select an element by ID to test text content
         * Class: Select elements by class to test the number of elements that match the className (length) or a particular element of the class (index)
         * Tag: Select a tag type to select elements that are not categorized as class or ID
@@ -67,6 +67,11 @@ it('should render a button', () => {...});
     
 ### Other Notes
  1. Multiple actions and tests can be defined in one assertion block. Once you're ready to test, save the assertion block. Saved assertion blocks are stored in LocalStorage and are restored the next time React VT is opened.
- 2. To run through your actions and tests, execute them in your React application while React VT Developer Tool is open to view live test results.
- 3. Once you're satisfied with your tests, you can export them as an Enzyme file and use it as a basis to start writing your own Enzyme tests.
+ 2. To run through your actions and tests, execute them in your React application while React VT Developer Tool is open to view live test results (e.g. clicking the button that you've specified as an action in your assertion block).
+ 3. Tests will not run until the actions that precede them are completed. 
+ 
+ ![Image of Block](https://github.com/brIAN-3/react-vt/blob/master/src/BlockScreenshot.png)
+ 
+ E.g. Test to check the value of Square will not run until the click action on Square has occurred.
+ 4. Once you're satisfied with your tests, you can export them as an Enzyme file and use it as a basis to start writing your own Enzyme tests.
 
