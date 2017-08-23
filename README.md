@@ -1,5 +1,4 @@
 # React VT
-React VT is a data-driven visual testing tool for React developers. 
 
 React VT presents a live view of the React component structure of your app, along with current state and props. 
 
