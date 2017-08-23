@@ -22233,7 +22233,6 @@
 	function getInitialState() {
 	  return {
 	    rows: [['', '', ''], ['', '', ''], ['', '', '']],
-	    something: true,
 	    turn: 'X',
 	    winner: undefined,
 	    gameList: gameStore

@@ -1,6 +1,6 @@
 {
   "name": "react-vt",
-  "version": "0.0.7",
+  "version": "0.1.0",
   "description": "A react visual testing tool",
   "main": "./src/inject.js",
   "scripts": {
