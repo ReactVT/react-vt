@@ -5,7 +5,7 @@ React VT presents a live view of the React component structure of your app, alon
 
 Users can define assertions and test them in real time while interacting with their application. Once the user is satisfied with their defined tests, they can export their assertions into an Enzyme file. 
 
-We built this tool to lower the latency between prototyping and testing your React application.
+![Image of demo](https://github.com/brIAN-3/react-vt/blob/master/src/demo.gif)
 
 
 ## Set Up
