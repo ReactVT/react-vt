@@ -39,7 +39,6 @@ function actionController(current, blockName) {
     return false; 
   }
   
-  console.log('checking action', current.spy.called);
   // We hit this if our current assert is an action that has not happened yet
   // We stop checking this assertion block
   const enterEvent = (current.event === 'keypress' && current.spy.called && current.spy.args[current.spy.args.length - 1][0].key === 'Enter' && current.lastInput === current.inputValue); 
@@ -132,6 +131,7 @@ function checkAssert() {
   });
 }
 
+ // Collects data to evaluate for tag tests. 
 function tagTest(current) {
   if (current.selectorModifier === '.length') return nodeStore.storage.tag[current.selectorName].length;
   let index = current.selectorModifier.slice(1, -1);
@@ -140,6 +140,7 @@ function tagTest(current) {
   return dataToTest.innerText; 
 }
 
+ // Collects data to evaluate for class tests. 
 function classTest(current) {
   if (current.selectorModifier === '.length') return nodeStore.storage.class[current.selectorName].length;
   let index = current.selectorModifier.slice(1, -1);
@@ -148,10 +149,12 @@ function classTest(current) {
   return dataToTest.innerText; 
 }
 
+ // Collects data to evaluate for id tests. 
 function idTest(current) {
   return document.getElementById(current.selectorName).innerText; 
 }
 
+ // Collects data to evaluate for component tests. 
 function componentTest(current) {
   if (current.selectorModifier === '.length') return nodeStore.storage.node[current.selectorName].address.length;
   let index = current.selectorModifier.slice(1, -1);
@@ -163,6 +166,7 @@ function componentTest(current) {
   return dataToTest; 
 }
 
+ // Collects data to evaluate for node tests. 
 function nodeTest(current) {
   let dataToTest = getLocation(current);
 
@@ -175,6 +179,7 @@ function nodeTest(current) {
   return dataToTest; 
 }
 
+ // Returns evaluation result based on the type of test being run
 function convertResult(type, dataToTest, value) {
   if (type === 'equal') {
     return dataToTest === value;
@@ -187,6 +192,7 @@ function convertResult(type, dataToTest, value) {
   }
 }
 
+ // Converts data to the specific type mentioned in the test
 function convertType(current) {
   switch (current.dataType) {
     case 'boolean':
@@ -266,6 +272,7 @@ function addAssert(freshAssert) {
   checkAssert();
 }
 
+// Deletes an assertion block based on the name given
 function deleteBlock(name) {
   for (let i = 0; i < currentAsserts.length; i++) {
     if (currentAsserts[i].name === name) {
