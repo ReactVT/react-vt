@@ -8,7 +8,7 @@ Users can define assertions and test them in real time while interacting with th
 We built this tool to lower the latency between prototyping and testing your React application.
 
 
-### Set Up
+## Set Up
 1. Run npm install for React VT in your root project folder
 
 ```
@@ -37,14 +37,14 @@ https://chrome.google.com/webstore/detail/react-vt/aphjepidficfgphkbggojoemgpmia
 
 5. Open Chrome Developer Tools -> React VT panel
 
-### Usage
+## Usage
 
-## Terminology 
+### Terminology 
 * Assertion Block: An assertion block is a collection of actions and tests to define your assertion. This is analogous to *it* statements in Mocha tests. At least one test or action is required for an assertion block to be valid.
 * Action: Actions can be added to your assertion block to build your test case. Click, double click, right click, and enter are available as actions. Enzyme exports are currently unsupported for Enter actions.
 * Test: Basic equal, not equal, greater than and less than comparisons can be done on props, state, and text nodes. 
 
-## Creating an assertion block
+### Creating an assertion block
 1. Click on new assertion block and enter a name - e.g. 'should render a button'. This will be the statement that will appear on an exported Enzyme test: 
 ```javascript
 it('should render a button', () => {....});
@@ -65,7 +65,7 @@ it('should render a button', () => {....});
     * Select a comparator - equal, not equal, greater than, and less than are available
     * Set the expected value
     
-## Other Notes
+### Other Notes
  1. Multiple actions and tests can be defined in one assertion block. Once you're ready to test, save the assertion block. Saved assertion blocks are stored in LocalStorage and are restored the next time React VT is opened.
  2. To run through your actions and tests, execute them in your React application while React VT Developer Tool is open to view live test results.
  3. Once you're satisfied with your tests, you can export them as an Enzyme file and use it as a basis to start writing your own Enzyme tests.
