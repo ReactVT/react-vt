@@ -73,4 +73,5 @@ it('should render a button', () => {...});
  
  E.g. Test to check the value of Square will not run until the click action on Square has occurred.
  4. Once you're satisfied with your tests, you can export them as an Enzyme file and use it as a basis to start writing your own Enzyme tests.
+ 5. Enzyme exports are generated based on the Mocha test framework and Chai assertion library.
 
