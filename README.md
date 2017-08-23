@@ -47,7 +47,7 @@ https://chrome.google.com/webstore/detail/react-vt/aphjepidficfgphkbggojoemgpmia
 ### Creating an assertion block
 1. Click on new assertion block and enter a name - e.g. 'should render a button'. This will be the statement that will appear on an exported Enzyme test: 
 ```javascript
-it('should render a button', () => {....});
+it('should render a button', () => {...});
 ```
 2. To create an action, click on a tree node in order to specify the component that the action will be done on and select an action type.
 3. To create a test:
