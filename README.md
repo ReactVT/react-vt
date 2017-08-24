@@ -83,7 +83,9 @@ Please submit issues/pull requests if you have feedback or would like to contrib
 ## Authors
 
 Brian Schmalz (https://github.com/bschmalz)
+
 Ian Rustandi (https://github.com/icrustandi)
+
 Ian Ramos (https://github.com/ibramos)
 
 ## License
