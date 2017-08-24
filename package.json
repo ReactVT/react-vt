@@ -1,21 +1,21 @@
 {
   "name": "react-vt",
-  "version": "0.1.0",
-  "description": "A react visual testing tool",
+  "version": "0.1.2",
+  "description": "Data-driven visual testing library for React developers",
   "main": "./src/inject.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/brIAN-3/react-vt.git"
+    "url": "git+https://github.com/ReactVT/react-vt.git"
   },
   "author": "Ian Ramos, Ian Rustandi, Brian Schmalz",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/brIAN-3/react-vt/issues"
+    "url": "https://github.com/ReactVT/react-vt/issues"
   },
-  "homepage": "https://github.com/brIAN-3/react-vt#readme",
+  "homepage": "https://github.com/ReactVT/react-vt#readme",
   "dependencies": {
     "sinon": "^2.4.1"
   },
