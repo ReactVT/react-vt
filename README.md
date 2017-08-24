@@ -70,7 +70,21 @@ it('should render a button', () => {...});
  3. Tests will not run until the actions that precede them are completed. 
  
  ![Image of Block](https://github.com/brIAN-3/react-vt/blob/master/src/BlockScreenshot.png)
- 
  E.g. Test to check the value of Square will not run until the click action on Square has occurred.
+ 
  4. Once you're satisfied with your tests, you can export them as an Enzyme file and use it as a basis to start writing your own Enzyme tests.
  5. Enzyme exports are generated based on the Mocha test framework and Chai assertion library.
+ 
+## Contributing
+
+Please submit issues/pull requests if you have feedback or would like to contribute. If you're interested in joining the React VT team as a contributor, feel free to message one of us directly.
+
+## Authors
+
+Brian Schmalz (https://github.com/bschmalz)
+Ian Rustandi (https://github.com/icrustandi)
+Ian Ramos (https://github.com/ibramos)
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE.md file for details
