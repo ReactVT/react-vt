@@ -63,7 +63,40 @@ it('should render a button', () => {...});
         * Select the data type for the expectation to compare to - string, number, boolean, undefined, and null are available
         * Select a comparator - equal, not equal, greater than, and less than are available
         * Set the expected value
-    
+
+### Exporting Tests into an Enzyme File
+Once you're satisfied with your tests, you can export them as an Enzyme file and use it as a basis to start writing your own Enzyme tests. Enzyme exports are generated based on the Mocha test framework and Chai assertion library.
+
+**Note that Enter actions are currently unsupported for this feature.**
+
+1. Clicking the 'Export to Enzyme' button will initiate a download. Check your default downloads folder and look for the generated 'enzymeTest.js' file.
+2. Make sure that you've installed Mocha, Chai, and Enzyme in your project.
+3. Transfer your enzymeTest.js file into your test folder.
+4. The generated test will resemble something similar to below. Replace the import path with the location of your top-level component.
+```javascript
+const expect = require('chai').expect;
+import React from 'react';
+import { mount } from 'enzyme';
+import 'jsdom-global/register';
+
+// MAKE SURE TO UPDATE THE PATH BELOW TO THE LOCATION OF YOUR TOP-LEVEL COMPONENT
+import App from 'fill this in with proper path';
+
+describe('React VT Tests', () => {
+  let wrapper;
+  beforeEach(() => {
+    wrapper = mount(<App />);
+  });
+ 
+  it('should equal X', () => {
+    wrapper.find('#board').childAt(0).childAt(0).simulate('click');
+  expect(wrapper.find('Square').at(0).props().letter).to.equal('X');
+  });
+ 
+});
+```
+5. Run your test suite.
+
 ### Other Notes
  1. Multiple actions and tests can be defined in one assertion block. Once you're ready to test, save the assertion block. Saved assertion blocks are stored in LocalStorage and are restored the next time React VT is opened.
  2. To run through your actions and tests, execute them in your React application while React VT Developer Tool is open to view live test results (e.g. clicking the button that you've specified as an action in your assertion block).
@@ -73,8 +106,6 @@ it('should render a button', () => {...});
  
  E.g. Test to check the value of Square will not run until the click action on Square has occurred.
  
- 4. Once you're satisfied with your tests, you can export them as an Enzyme file and use it as a basis to start writing your own Enzyme tests.
- 5. Enzyme exports are generated based on the Mocha test framework and Chai assertion library.
  
 ## Contributing
 
