@@ -70,6 +70,7 @@ it('should render a button', () => {...});
  3. Tests will not run until the actions that precede them are completed. 
  
  ![Image of Block](https://github.com/brIAN-3/react-vt/blob/master/src/BlockScreenshot.png)
+ 
  E.g. Test to check the value of Square will not run until the click action on Square has occurred.
  
  4. Once you're satisfied with your tests, you can export them as an Enzyme file and use it as a basis to start writing your own Enzyme tests.
