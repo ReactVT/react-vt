@@ -22228,8 +22228,6 @@
 
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-	(0, _inject2.default)(_react2.default);
-
 	var gameStore = [];
 
 	function getInitialState() {
@@ -22297,6 +22295,11 @@
 	    key: 'componentDidUpdate',
 	    value: function componentDidUpdate() {
 	      console.log('did update');
+	    }
+	  }, {
+	    key: 'componentWillMount',
+	    value: function componentWillMount() {
+	      (0, _inject2.default)(_react2.default, this);
 	    }
 	  }, {
 	    key: 'handleClick',
@@ -23091,24 +23094,20 @@
 	'use strict';
 
 	var domParse = __webpack_require__(191);
+	var nodeStore = __webpack_require__(253);
 
-	console.log('other parse', domParse);
 	var assert = __webpack_require__(192);
+	var topNode = void 0;
+	var firstPass = true;
+
 	// importing React from example app
-	function injector(React, reactDom) {
-	  console.log('this should display');
-	  var traversedDom = void 0;
+	function injector(React, parentNode) {
+	  topNode = parentNode;
+	  startTraverse(parentNode);
 	  var func = React.Component.prototype.setState;
 	  React.Component.prototype.setState = function () {
-	    var _this = this;
-
-	    console.log('state hooked');
 	    // set timeout to delay traverse so that it is appended to original setState
-	    setTimeout(function () {
-	      traversedDom = domParse.parser(_this, reactDom);
-	      // specify message type to target specific message
-	      window.postMessage({ type: 'virtualdom', data: traversedDom }, "*");
-	    }, 0);
+	    startTraverse(this);
 
 	    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
 	      args[_key] = arguments[_key];
@@ -23116,17 +23115,59 @@
 
 	    return func.apply(this, args);
 	  };
-
 	  // listens for messages from backgroundjs -> content script -> webpage
 	  window.addEventListener('message', function (event) {
 	    // only accept messges to self
 	    if (event.source != window) return;
 	    // filter out other messages floating around in existing context
+
 	    if (event.data.type === 'assertion') {
-	      console.log("webpage received this from content script", event);
-	      assert.addAssert(event.data);
+	      if (event.data.flag === 'onload') {
+	        event.data.message.forEach(function (item) {
+	          assert.addAssert(item);
+	        });
+	        startTraverse(parentNode);
+	      } else if (event.data.flag === 'delete') {
+	        assert.deleteBlock(event.data.message);
+	      } else {
+	        assert.addAssert(event.data.message);
+	      }
 	    }
 	  }, false);
+	}
+
+	function startTraverse(self, reactDom) {
+	  var nodePackage = {};
+	  setTimeout(function () {
+	    var travPromise = throttle(domParse.parser, 25);
+	    travPromise.then(function (result) {
+	      // Conditional to display feedback for react router incompatibility
+	      if (result === 'react-router') {
+	        window.postMessage({ type: 'virtualdom', data: 'react-router' }, "*");
+	      } else {
+	        nodePackage.virtualDom = result;
+	        nodePackage.nodeStore = nodeStore.storage;
+	        var title = document.title;
+	        // specify message type to target specific message
+	        window.postMessage({ type: 'virtualdom', data: nodePackage, topNode: topNode.constructor.name, title: title, first: firstPass }, "*");
+	        firstPass = false;
+	      }
+	    });
+	  }, 0);
+	}
+
+	function throttle(func, wait) {
+	  var waiting = false;
+	  return new Promise(function (resolve, reject) {
+	    if (waiting) reject();
+	    waiting = true;
+	    setTimeout(function () {
+	      waiting = false;
+	      var result = func(topNode);
+	      resolve(result);
+	    }, wait);
+	    return func(topNode);
+	  });
 	}
 
 	module.exports = injector;
@@ -23140,9 +23181,211 @@
 	var assert = __webpack_require__(192);
 	var nodeStore = __webpack_require__(253);
 
-	// This is not being used now, but we are assigning it a value that we'd want to have access
-	// to in the future if we are making Enzyme boilerplate
-	var appName = void 0;
+	// Initial Call, checks to make sure this is not a router application which is not supported yet
+	var parser = function parser(dom, reactDom) {
+	  if (dom._reactInternalInstance._context.router) return 'reactRouter';
+	  return ReactParentTraverse(dom);
+	};
+
+	// The nodestore collects all relevant information such as ids, classes of the page in an object
+	var nodeStoreController = function nodeStoreController(node, name, address, props, state) {
+	  var parent = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
+
+	  nodeStore.storage.address[address] = {};
+	  nodeStore.storage.address[address].state = state;
+	  nodeStore.storage.address[address].props = props;
+	  nodeStore.storage.address[address].name = name;
+	  var classArr = void 0;
+
+	  // Here we seperate out logic based on the type of component we are working on
+	  if (node.constructor.name === 'ReactDOMComponent') {
+	    // Setting id for item
+	    if (props.id) nodeStore.storage.id[props.id] = address;
+
+	    // Setting classes for item
+	    if (props.className) {
+	      classArr = props.className.split(/\s+/);
+	      classArr.forEach(function (newclass) {
+	        if (nodeStore.storage.class[newclass]) nodeStore.storage.class[newclass].push(address);else nodeStore.storage.class[newclass] = [address];
+	      });
+	    }
+
+	    // Storing the tag of the node
+	    nodeStore.storage.tag[name] ? nodeStore.storage.tag[name].push(address) : nodeStore.storage.tag[name] = [address];
+
+	    // Storing the index of the item in case we need to reference it out of a group selection. 
+	    nodeStore.storage.address[address].index = nodeStore.storage.tag[name].length - 1;
+
+	    // This logic will cover smart components
+	  } else {
+
+	    // We store props, state, and address about the node here
+	    if (nodeStore.storage.node[name]) {
+	      nodeStore.storage.node[name].address.push(address);
+	      nodeStore.storage.node[name].state.push(state);
+	      nodeStore.storage.node[name].props.push(props);
+	    } else {
+	      nodeStore.storage.node[name] = {};
+	      nodeStore.storage.node[name].address = [address];
+	      nodeStore.storage.node[name].state = [state];
+	      nodeStore.storage.node[name].props = [props];
+	    }
+
+	    // Index of item in case we need to reference it based on a group selection
+	    nodeStore.storage.address[address].index = nodeStore.storage.node[name].address.length - 1;
+
+	    // Some special logic based on whether or not this component is the root component or not
+	    // This is for non parent nodes
+	    if (!parent) {
+	      // Setting node id
+	      if (node._renderedComponent._hostNode.id) nodeStore.storage.id[node._renderedComponent._hostNode.id] = address;
+	      // Setting node classes
+	      if (node._renderedComponent._hostNode.className) {
+	        classArr = node._renderedComponent._hostNode.className.split(/\s+/);
+	        classArr.forEach(function (item) {
+	          if (nodeStore.storage.class[item]) nodeStore.storage.class[item].push(address);else nodeStore.storage.class[item] = [address];
+	        });
+	      }
+	      // Logic for parent component
+	    } else {
+	      // Setting node id
+	      if (node._reactInternalInstance._renderedComponent._hostContainerInfo._node.id) nodeStore.storage.id[node._reactInternalInstance._renderedComponent._hostContainerInfo._node.id] = address;
+	      // Setting node classes
+	      if (node._reactInternalInstance._renderedComponent._hostContainerInfo._node.className) {
+	        classArr = node._reactInternalInstance._renderedComponent._hostContainerInfo._node.className.split(/\s+/);
+	        classArr.forEach(function (item) {
+	          if (nodeStore.storage.class[item]) nodeStore.storage.class[item].push(address);else nodeStore.storage.class[item] = [address];
+	        });
+	      }
+	    }
+	  }
+	};
+
+	var ReactParentTraverse = function ReactParentTraverse(dom) {
+	  // Resets the nodeStore for the new traverse
+	  nodeStore.storage = {
+	    address: {},
+	    id: {},
+	    class: {},
+	    node: {},
+	    tag: {}
+	  };
+
+	  // Create a new data object to fill with our parsed DOM. 
+	  var data = {};
+
+	  // Target parent name
+	  data.name = dom.constructor.name;
+	  // Parent is automatically a smart component, so this is set to true
+	  data.component = true;
+	  // Setting parent props
+	  data.props = dom.props;
+	  // Setting parent state 
+	  data.state = dom.state;
+	  // Setting parent address
+	  data.address = [dom._reactInternalInstance._hostContainerInfo._node.id, 0];
+	  // Setting parent id
+	  data.id = dom._reactInternalInstance._renderedComponent._hostContainerInfo._node.id;
+	  // Setting parent class
+	  data.class = dom._reactInternalInstance._renderedComponent._hostContainerInfo._node.className;
+	  // Add necessary data to nodeStore
+	  nodeStoreController(dom, data.name, data.address, data.props, data.state, true);
+	  // Instantiate the children array for the parent node
+	  data.children = [];
+
+	  // Setting debugId of parent node to -1. Not sure if React ever uses 0. 
+	  data.debugId = -1;
+
+	  // make call to another function where it will traverse through children
+	  var children = dom._reactInternalInstance._renderedComponent._renderedChildren;
+	  if (children) {
+	    Object.values(children).forEach(function (child, index) {
+	      var address = data.address.slice(0);
+	      address.push(index);
+	      // Here we start our recursion through the virtual DOM
+	      if (child.constructor.name !== 'ReactDOMTextComponent') data.children.push(ReactChildTraverse(child, address));
+	    });
+	  }
+	  // At this point we've finished all of our recursive calls to ReactChildTraverse
+	  // So we now check our asserts
+	  assert.checkAssert();
+	  // and return the data we collected
+	  return data;
+	};
+
+	// Our traversal function for every node but the root node
+	var ReactChildTraverse = function ReactChildTraverse(child, address) {
+	  // We declare the object we will be building, starting it with an empty children array
+	  var childData = {
+	    children: []
+	  };
+	  var children = void 0;
+	  var props = void 0;
+	  childData.debugId = child._debugID;
+	  // set conditional for component vs not
+	  if (child.constructor.name === 'ReactCompositeComponentWrapper') {
+	    // Parsing logic for smart React Components
+	    childData.name = child._currentElement.type.name;
+	    childData.component = true;
+
+	    // We clone the state to ensure no circular references
+	    childData.state = cloneDeep(child._instance.state);
+
+	    // If props exist, make a copy of it so we can delete children out of it, otherwise it's null
+	    var _newProps = child._instance.props !== null ? Object.assign({}, child._instance.props) : null;
+	    // Delete children out of props 
+	    if (_newProps.children) delete _newProps.children;
+	    // Set our props to a cloned version of the props
+	    childData.props = cloneDeep(_newProps);
+	    // Get references to the node's children
+	    children = child._renderedComponent._renderedChildren;
+	    // Set address, it's either the node's id or the address passed down to the node
+	    childData.address = child._renderedComponent._hostNode.id ? [child._renderedComponent._hostNode.id] : address;
+	    // Set node's id 
+	    childData.id = child._renderedComponent._hostNode.id;
+	    // Set node's class
+	    childData.class = child._renderedComponent._hostNode.className;
+	  } else {
+	    // Parsing logic for dumb React Components
+	    // See above comments if you need to see what is happening here, same logic, different locations
+	    childData.name = child._currentElement.type;
+	    childData.component = false;
+	    childData.state = null;
+	    childData.address = child._currentElement.props.id ? [child._currentElement.props.id] : address;
+	    var newProps = child._currentElement.props !== null ? Object.assign({}, child._currentElement.props) : null;
+	    if (newProps.children) delete newProps.children;
+	    childData.props = cloneDeep(newProps);
+	    childData.id = childData.props.id;
+	    childData.class = childData.props.className;
+	    children = child._renderedChildren;
+	  }
+
+	  // We add the info we've collected for our node to the nodeStore
+	  nodeStoreController(child, childData.name, childData.address, childData.props, childData.state);
+
+	  // If we have children, set up our recursive calls
+	  if (children) {
+	    var textNodes = 0;
+	    Object.values(children).forEach(function (child, index) {
+	      // Filter out all React Text Nodes
+	      // We may want to add the text data to the parent node on a future revision
+	      if (child.constructor.name === 'ReactDOMTextComponent') {
+	        textNodes++;
+	      } else {
+	        // create new Address to pass on to children in recursive call
+	        var newAddress = childData.address.slice(0);
+	        // Text nodes offset our address algorithm, so we subtract them from our address index to ensure consistency
+	        newAddress.push(index - textNodes);
+	        // We populate our children array with the results of further recursive calls to the object's children
+	        childData.children.push(ReactChildTraverse(child, newAddress));
+	      }
+	    });
+	  }
+	  // Delete id and className from props as to not have confusion on the frontend
+	  if (childData.props.id) delete childData.props.id;
+	  if (childData.props.className) delete childData.props.className;
+	  return childData;
+	};
 
 	// Creates a clone of an object/array and also clones any objects/arrays that may be nested inside of it
 	function cloneDeep(value) {
@@ -23162,215 +23405,6 @@
 	  return result;
 	}
 
-	var parser = function parser(dom, reactDom) {
-	  if (dom.constructor.name === 'Connect') return ReduxParentTraverse(dom, reactDom);
-	  return ReactParentTraverse(dom);
-	};
-
-	var ReduxParentTraverse = function ReduxParentTraverse(dom, reactDom) {
-
-	  //nodeStore = {}; 
-
-	  // This grabs the name of the top component, will be needed for when we generate enzyme test files. 
-	  appName = dom.constructor.name;
-
-	  // Create a new data object to fill with our parsed DOM. 
-	  var data = {};
-
-	  // target parent state
-	  // add conditional for whether or not parent component is smart otherwise throw error
-
-	  // THIS WAS CHANGED
-	  data.name = dom._reactInternalInstance._renderedComponent._instance.constructor.name;
-	  if (data.name === 'Constructor') data.name = 'Component';
-	  data.component = true;
-	  data.props = null;
-	  // THIS WAS CHANGED
-	  data.state = Object.keys(dom.state).length > Object.keys(dom.store.getState()).length ? dom.state : dom.store.getState();
-	  data.address = [reactDom.findDOMNode(dom).parentNode.getAttribute("id"), 0];
-	  var stringAddress = data.address.toString();
-	  nodeStore[stringAddress] = {};
-	  nodeStore[stringAddress].state = data.state;
-	  nodeStore[stringAddress].props = {};
-	  data.children = [];
-
-	  // Setting debugId of parent node to -1. Not sure if React ever uses 0. 
-
-	  data.debugId = -1;
-
-	  // make call to another function where it will traverse through children
-
-	  // I THINK THIS WAS CHANGED
-	  var children = dom._reactInternalInstance._renderedComponent._renderedComponent._renderedChildren;
-	  Object.values(children).forEach(function (child, index) {
-	    var address = data.address.slice(0);
-	    address.push(index);
-	    if (child.constructor.name !== 'ReactDOMTextComponent') data.children.push(ReduxChildTraverse(child, address));
-	  });
-	  assert.checkAssert();
-	  return data;
-	};
-
-	var ReduxChildTraverse = function ReduxChildTraverse(child, address) {
-	  var childData = {
-	    children: []
-	  };
-	  var children = void 0;
-	  var props;
-	  childData.debugId = child._debugID;
-
-	  console.log('find the props', child);
-	  // set conditional for component vs not
-	  if (child.constructor.name === 'ReactCompositeComponentWrapper') {
-	    // Parsing logic for smart React Components
-	    childData.name = child._currentElement.type.name;
-
-	    childData.component = true;
-
-	    // THIS WAS CHANGED
-	    var _newProps = Object.assign({}, child._instance.props);
-	    if (_newProps.children) delete _newProps.children;
-	    childData.props = cloneDeep(_newProps);
-	    childData.state = cloneDeep(child._instance.state);
-	    children = child._renderedComponent._renderedChildren;
-	    childData.address = child._instance.props.id ? [child._instance.props.id] : address;
-	  } else {
-	    // Parsing logic for dumb React Components
-	    childData.name = child._currentElement.type;
-	    childData.component = false;
-	    childData.state = null;
-	    childData.address = child._currentElement.props.id ? [child._currentElement.props.id] : address;
-	    var newProps = Object.assign({}, child._currentElement.props);
-	    if (newProps.children) delete newProps.children;
-
-	    // childData.props = cloneDeep(newProps);
-
-	    childData.props = cloneDeep(newProps);
-	    children = child._renderedChildren;
-	  }
-
-	  // Hack solution in case we can't figure out something better
-	  if (childData.name === 'Constructor') childData.name = 'Component';
-
-	  // Store the props and state of the object on a nodeStore so that we can easily reference these for assertions
-	  var addressString = childData.address.toString();
-	  nodeStore[addressString] = {};
-	  nodeStore[addressString].state = childData.state;
-	  nodeStore[addressString].props = childData.props;
-
-	  // filter out text nodes from children
-	  if (children) {
-	    var textNodes = 0;
-	    Object.values(children).forEach(function (child, index) {
-	      // Filter out all React Text Nodes
-	      // We may want to add the text data to the parent node on a future revision
-	      if (child.constructor.name === 'ReactDOMTextComponent') {
-	        textNodes++;
-	      } else {
-	        // create new Address to pass on to children in recursive call
-	        var newAddress = childData.address.slice(0);
-	        newAddress.push(index - textNodes);
-	        childData.children.push(ReduxChildTraverse(child, newAddress));
-	      }
-	    });
-	  }
-	  return childData;
-	};
-
-	var ReactParentTraverse = function ReactParentTraverse(dom) {
-	  nodeStore.empty();
-	  // This grabs the name of the top component, will be needed for when we generate enzyme test files. 
-	  appName = dom.constructor.name;
-
-	  // Create a new data object to fill with our parsed DOM. 
-	  var data = {};
-
-	  // target parent state
-	  // add conditional for whether or not parent component is smart otherwise throw error
-	  data.name = dom.constructor.name;
-	  data.component = true;
-	  data.props = null;
-	  data.state = dom.state;
-	  data.address = [dom._reactInternalInstance._hostContainerInfo._node.id, 0];
-	  var stringAddress = data.address.toString();
-	  nodeStore.storage[stringAddress] = {};
-	  nodeStore.storage[stringAddress].state = data.state;
-	  nodeStore.storage[stringAddress].props = {};
-	  data.children = [];
-
-	  // Setting debugId of parent node to -1. Not sure if React ever uses 0. 
-
-	  data.debugId = -1;
-
-	  // make call to another function where it will traverse through children
-	  var children = dom._reactInternalInstance._renderedComponent._renderedChildren;
-	  console.log('Parent dom', dom);
-	  if (children) {
-	    Object.values(children).forEach(function (child, index) {
-	      var address = data.address.slice(0);
-	      address.push(index);
-	      if (child.constructor.name !== 'ReactDOMTextComponent') data.children.push(ReactChildTraverse(child, address));
-	    });
-	  }
-	  assert.checkAssert();
-	  return data;
-	};
-
-	var ReactChildTraverse = function ReactChildTraverse(child, address) {
-	  var childData = {
-	    children: []
-	  };
-	  var children = void 0;
-	  var props;
-	  childData.debugId = child._debugID;
-	  // set conditional for component vs not
-	  if (child.constructor.name === 'ReactCompositeComponentWrapper') {
-	    // Parsing logic for smart React Components
-	    childData.name = child._currentElement.type.name;
-	    childData.component = true;
-	    childData.state = cloneDeep(child._instance.state);
-	    var _newProps2 = child._instance.props !== null ? Object.assign({}, child._instance.props) : null;
-	    if (_newProps2.children) delete _newProps2.children;
-	    childData.props = cloneDeep(_newProps2);
-	    children = child._renderedComponent._renderedChildren;
-	    childData.address = child._instance.props.id ? [child._instance.props.id] : address;
-	  } else {
-	    // Parsing logic for dumb React Components
-	    childData.name = child._currentElement.type;
-	    childData.component = false;
-	    childData.state = null;
-	    childData.address = child._currentElement.props.id ? [child._currentElement.props.id] : address;
-	    var newProps = child._currentElement.props !== null ? Object.assign({}, child._currentElement.props) : null;
-	    if (newProps.children) delete newProps.children;
-	    childData.props = cloneDeep(newProps);
-	    children = child._renderedChildren;
-	  }
-
-	  // Store the props and state of the object on a nodeStore so that we can easily reference these for assertions
-	  var addressString = childData.address.toString();
-	  nodeStore.storage[addressString] = {};
-	  nodeStore.storage[addressString].state = childData.state;
-	  nodeStore.storage[addressString].props = childData.props;
-
-	  // filter out text nodes from children
-	  if (children) {
-	    var textNodes = 0;
-	    Object.values(children).forEach(function (child, index) {
-	      // Filter out all React Text Nodes
-	      // We may want to add the text data to the parent node on a future revision
-	      if (child.constructor.name === 'ReactDOMTextComponent') {
-	        textNodes++;
-	      } else {
-	        // create new Address to pass on to children in recursive call
-	        var newAddress = childData.address.slice(0);
-	        newAddress.push(index - textNodes);
-	        childData.children.push(ReactChildTraverse(child, newAddress));
-	      }
-	    });
-	  }
-	  return childData;
-	};
-
 	module.exports = {
 	  parser: parser
 	};
@@ -23384,11 +23418,17 @@
 	var domParse = __webpack_require__(191);
 	var sinon = __webpack_require__(193);
 	var nodeStore = __webpack_require__(253);
-	// this is only to make our fake dummy add only go once, remove asap
-	var assertStore = [];
 
 	// Current asserts to check. 
 	var currentAsserts = [];
+
+	function getLocation(assertion) {
+	  if (assertion.selector === 'node') return nodeStore.storage.address[assertion.loc.toString()];
+	  if (assertion.selector === 'id') return document.getElementById(assertion.selectorName);
+	  if (assertion.selector === 'class') return document.getElementsByClassName(assertion.selectorName);
+	  if (assertion.selector === 'tag') return document.getElementsByTagName(assertion.selector);
+	  if (assertion.selector === 'component') return nodeStore.storage.node[assertion.selectorName];
+	}
 
 	// Get the actual DOM node at the supplied address and return it
 	function getNode(address) {
@@ -23399,107 +23439,192 @@
 	  return result;
 	}
 
+	function actionController(current, blockName) {
+	  // We hit this if we have reached an action that hasn't been set up yet
+	  // We add a spy on the specified node and then stop checking this assertion block
+	  if (current.added === false) {
+	    current.added = true;
+	    var spy = sinon.spy();
+	    var currNode = getNode(current.loc);
+	    currNode.addEventListener(current.event, spy);
+	    if (current.event === 'keypress') {
+	      current.lastInput = '';
+	      currNode.addEventListener(current.event, function () {
+	        return current.lastInput = currNode.value;
+	      });
+	    }
+	    current.spy = spy;
+	    return false;
+	  }
+
+	  // We hit this if our current assert is an action that has not happened yet
+	  // We stop checking this assertion block
+	  var enterEvent = current.event === 'keypress' && current.spy.called && current.spy.args[current.spy.args.length - 1][0].key === 'Enter' && current.lastInput === current.inputValue;
+	  if (current.event === 'keypress' && !enterEvent) return false;
+	  // We hit this if our current assert is an action that has happened
+	  // We remove the assertion from the assertion block and then we go to the next while loop cycle
+	  if (enterEvent || current.spy.called === true) {
+	    var resultMessage = {
+	      // TODO: this property might need to change to get assertion block name from chrome extension message
+	      assertionBlock: blockName,
+	      assertID: current.assertID,
+	      result: true,
+	      comparator: current.type
+	    };
+	    sendResult(resultMessage);
+	    return true;
+	  }
+	  return false;
+	}
+
+	function modifierController(modifier, data) {
+	  if (modifier === '.length') {
+	    return data.length;
+	  } else if (modifier[0] === '[') {
+	    var index = modifier.slice(1, -1);
+	    return data[index];
+	  }
+	}
+
 	// Check our current assertion blocks and run any available assertions. 
 	// Runs on every state change
+
+	// TAKE OUT CURRENT ASSERTS FROM ARGUMENT ONCE DONE WITH DUMMY DATA
 	function checkAssert() {
-	  console.log('node', nodeStore.storage);
 	  // For debugging purposes, should be removed prior to release
 	  if (currentAsserts.length === 0) {
-	    console.log('no asserts to check');
 	    return;
 	  }
 
 	  // Loop through all current assertion blocks
 	  currentAsserts.forEach(function (currAssert, i) {
 
-	    // Loop through the current assertion block that we are testing 
-	    // This can probably be refactored/cleaned up 
+	    // Loop through the current assertion block that we are testing
+	    // This can probably be refactored/cleaned up
 	    while (currAssert.asserts.length > 0) {
-
-	      // current becomes the first assertion
 	      var current = currAssert.asserts[0];
-	      var valueToTest = void 0;
+	      // if action
+	      if (current.type === 'action') {
+	        if (actionController(current, currAssert.name)) {
+	          currAssert.asserts.shift();
+	          continue;
+	        }
+	        break;
+	      }
+
+	      // Compose result message to be sent to chrome extension
+	      var resultMessage = {
+	        // TODO: this property might need to change to get assertion block name from chrome extension message
+	        assertionBlock: currAssert.name,
+	        assertID: current.assertID
+	      };
+	      // current becomes the first assertion
 	      var result = void 0;
+	      var dataToTest = void 0;
+	      if (current.selector === 'node') dataToTest = nodeTest(current);
+	      if (current.selector === 'component') dataToTest = componentTest(current);
+	      if (current.selector === 'id') dataToTest = idTest(current);
+	      if (current.selector === 'class') dataToTest = classTest(current);
+	      if (current.selector === 'tag') dataToTest = tagTest(current);
 
-	      // We hit this if we have reached an action that hasn't been set up yet
-	      // We add a spy on the specified node and then stop checking this assertion block
-	      if (current.type === 'action' && current.added === false) {
-	        current.added = true;
-	        var spy = sinon.spy();
-	        getNode(current.loc).addEventListener(current.event, spy);
-	        current.spy = spy;
-	        break;
-	      }
-
-	      // We hit this if our current assert is an action that has not happened yet
-	      // We stop checking this assertion block
-	      if (current.type === 'action' && current.spy.calledOnce === false) {
-	        console.log('spy sees nothing');
-	        break;
-	      }
-
-	      // We hit this if our current assert is an action that has happened
-	      // We remove the assertion from the assertion block and then we go to the next while loop cycle
-	      if (current.type === 'action' && current.spy.calledOnce === true) {
-	        console.log('spy passed');
-	        currAssert.asserts.shift();
-	        continue;
-	      }
-
-	      // Converts value to the designated type
-	      switch (current.dataType) {
-	        case 'boolean':
-	          current.value = Boolean(current.value);
-	          break;
-	        case 'number':
-	          current.value = +current.value;
-	          break;
-	        case 'null':
-	          current.value = null;
-	          break;
-	        case 'undefined':
-	          current.value = undefined;
-	          break;
-	        case 'string':
-	          break;
-	        default:
-	          console.log('Data type block failed');
-	      }
-
-	      // Check modifier field for input and determine value to test
-	      if (current.modifier === '.length') {
-	        valueToTest = nodeStore.storage[current.loc.toString()][current.source][current.property].length;
-	      } else if (current.modifier[0] === '[') {
-	        var index = current.modifier.slice(1, -1);
-	        valueToTest = nodeStore.storage[current.loc.toString()][current.source][current.property][index];
-	      } else {
-	        valueToTest = nodeStore.storage[current.loc.toString()][current.source][current.property];
-	      }
+	      // Convert our value to the specified variable type
+	      current.value = convertType(current);
 
 	      // We hit this if the assertion is equal
 	      // In this case, we make the specified comparison and send the result back to the chrome extension
-	      if (current.type === 'equal') {
-	        result = valueToTest === current.value;
-	      } else if (current.type === 'greaterthan') {
-	        result = valueToTest > current.value;
-	      } else if (current.type === 'lessthan') {
-	        result = valueToTest < current.value;
-	      }
+	      result = convertResult(current.type, dataToTest, current.value);
 
-	      // // TODO : exist and notexist condition
-	      // else if (current.type === 'exist') {
-	      //   result 
-	      // } else if (current.type === 'notexist') {
-	      // }
-	      var resultmessage = 'result is ' + result;
-	      sendResult(resultmessage);
-	      console.log('result is ', result);
+	      // Assign test result details to resultMessage
+	      resultMessage.expected = current.value;
+	      resultMessage.actual = dataToTest;
+	      resultMessage.comparator = current.type;
+	      resultMessage.result = result;
+	      sendResult(resultMessage);
 	      currAssert.asserts.shift();
 	    }
 	    // We hit this if we have removed all of the assertions from our assertion block
 	    // In that case, we remove the assertion block from our list of current assertion blocks
 	    if (currAssert.asserts.length === 0) currentAsserts.splice(i, 1);
 	  });
+	}
+
+	// Collects data to evaluate for tag tests. 
+	function tagTest(current) {
+	  if (current.selectorModifier === '.length') return nodeStore.storage.tag[current.selectorName].length;
+	  var index = current.selectorModifier.slice(1, -1);
+	  var address = nodeStore.storage.tag[current.selectorName][index];
+	  var dataToTest = getNode(address);
+	  return dataToTest.innerText;
+	}
+
+	// Collects data to evaluate for class tests. 
+	function classTest(current) {
+	  if (current.selectorModifier === '.length') return nodeStore.storage.class[current.selectorName].length;
+	  var index = current.selectorModifier.slice(1, -1);
+	  var address = nodeStore.storage.class[current.selectorName][index];
+	  var dataToTest = getNode(address);
+	  return dataToTest.innerText;
+	}
+
+	// Collects data to evaluate for id tests. 
+	function idTest(current) {
+	  return document.getElementById(current.selectorName).innerText;
+	}
+
+	// Collects data to evaluate for component tests. 
+	function componentTest(current) {
+	  if (current.selectorModifier === '.length') return nodeStore.storage.node[current.selectorName].address.length;
+	  var index = current.selectorModifier.slice(1, -1);
+	  var address = nodeStore.storage.node[current.selectorName].address[index].toString();
+	  var dataToTest = nodeStore.storage.address[address];
+	  if (current.source === 'state') dataToTest = dataToTest.state[current.property];
+	  if (current.source === 'props') dataToTest = dataToTest.props[current.property];
+	  if (current.modifier) dataToTest = modifierController(current.modifier, dataToTest);
+	  return dataToTest;
+	}
+
+	// Collects data to evaluate for node tests. 
+	function nodeTest(current) {
+	  var dataToTest = getLocation(current);
+
+	  // Check selector modifier field for input and determine value to test
+	  if (current.selectorModifier) dataToTest = modifierController(current.selectorModifier, dataToTest);
+	  //if (current.source === 'text') dataToTest = dataToTest.innerText;
+	  if (current.source === 'state') dataToTest = dataToTest.state[current.property];
+	  if (current.source === 'props') dataToTest = dataToTest.props[current.property];
+	  if (current.modifier) dataToTest = modifierController(current.modifier, dataToTest);
+	  return dataToTest;
+	}
+
+	// Returns evaluation result based on the type of test being run
+	function convertResult(type, dataToTest, value) {
+	  if (type === 'equal') {
+	    return dataToTest === value;
+	  } else if (type === 'greaterthan') {
+	    return dataToTest > value;
+	  } else if (type === 'lessthan') {
+	    return dataToTest < value;
+	  } else if (type === 'notequal') {
+	    return dataToTest !== value;
+	  }
+	}
+
+	// Converts data to the specific type mentioned in the test
+	function convertType(current) {
+	  switch (current.dataType) {
+	    case 'boolean':
+	      return Boolean(current.value);
+	    case 'number':
+	      return +current.value;
+	    case 'null':
+	      return null;
+	    case 'undefined':
+	      return undefined;
+	    case 'string':
+	      return current.value;
+	    default:
+	      return 'Data type block failed';
+	  }
 	}
 
 	// Send result back to chrome extension
@@ -23512,30 +23637,41 @@
 	  // assertBundle is the eventual assertion block that we will be adding
 	  var assertBundle = {};
 	  assertBundle.asserts = [];
+	  assertBundle.name = freshAssert.name;
 
 	  // This is a flag to determine whether we have added an action yet on this assertion block
 	  // We want to have the ability to see if a specific event happens more than once so we only want to have one spy set up at a time
 	  var actionAdded = false;
 
 	  // Loop through our fresh assert bundle so that we can add it to our current asserts
-	  freshAssert.data.forEach(function (curr) {
+	  freshAssert.asserts.forEach(function (curr) {
 	    // 'actions' require a special logic and need to be reconstructed before inserting
 	    if (curr.type === 'action') {
 	      // base info for every action
 	      var newAssert = {};
+	      newAssert.assertID = curr.assertID;
 	      newAssert.loc = curr.loc;
 	      newAssert.type = 'action';
 	      newAssert.event = curr.event;
+	      newAssert.inputValue = curr.inputValue;
+
 	      // This is how we will handle our first action in the assertion bundle
 	      // For this one, we will add a spy  
 	      if (!actionAdded) {
 	        var spy = sinon.spy();
-	        getNode(curr.loc).addEventListener(curr.event, spy);
+	        var currNode = getNode(curr.loc);
+	        currNode.addEventListener(curr.event, spy);
 	        newAssert.spy = spy;
 	        newAssert.added = true;
 
 	        // Here we set our flag so that we only add one spy to this bundle at this time
 	        actionAdded = true;
+	        if (curr.event === 'keypress') {
+	          newAssert.lastInput = '';
+	          currNode.addEventListener(curr.event, function () {
+	            return newAssert.lastInput = currNode.value;
+	          });
+	        }
 	      } else {
 	        // Any actions other than the first will get no spy and have the added property be false
 	        newAssert.added = false;
@@ -23552,11 +23688,23 @@
 
 	  // Grab our new bundle and add it our current assert queue
 	  currentAsserts.push(assertBundle);
+	  checkAssert();
+	}
+
+	// Deletes an assertion block based on the name given
+	function deleteBlock(name) {
+	  for (var i = 0; i < currentAsserts.length; i++) {
+	    if (currentAsserts[i].name === name) {
+	      currentAsserts.splice(i, 1);
+	      break;
+	    }
+	  }
 	}
 
 	module.exports = {
 	  checkAssert: checkAssert,
-	  addAssert: addAssert
+	  addAssert: addAssert,
+	  deleteBlock: deleteBlock
 	};
 
 /***/ }),
@@ -36270,10 +36418,22 @@
 	// This stores props and state for each node. Uses the address of the node as the key.
 
 	// Planning to add other storage objects here and have them all be keys on the export.
-	var storage = {};
+	var storage = {
+	  address: {},
+	  id: {},
+	  class: {},
+	  node: {},
+	  tag: {}
+	};
 
 	var empty = function empty() {
-	  return storage = {};
+	  storage = {
+	    address: {},
+	    id: {},
+	    class: {},
+	    node: {},
+	    tag: {}
+	  };
 	};
 
 	module.exports = {
