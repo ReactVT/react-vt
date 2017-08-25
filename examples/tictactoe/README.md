@@ -1,4 +1,4 @@
-#Tic Tac Toe example
+# Tic Tac Toe example
 
 1. run 'npm install' in tictactoe directory
 2. run 'npm run build' to run webpack
