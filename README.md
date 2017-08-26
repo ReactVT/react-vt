@@ -107,7 +107,6 @@ describe('React VT Tests', () => {
  
  E.g. Test to check the value of Square will not run until the click action on Square has occurred.
  
- 
 ## Contributing
 
 Please submit issues/pull requests if you have feedback or would like to contribute. If you're interested in joining the React VT team as a contributor, feel free to message one of us directly.
