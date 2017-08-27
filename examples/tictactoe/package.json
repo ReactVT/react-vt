@@ -8,7 +8,7 @@
     "test": "export NODE_ENV=test && mocha --timeout 8000 test/"
   },
   "repository": {
-    "type": "git",
+    "type": "git"
   },
   "author": "David Petri <petridw@gmail.com> (davidpetri.com)",
   "license": "ISC",
