@@ -4,7 +4,7 @@
   "description": "Data-driven visual testing library for React developers",
   "main": "./src/inject.js",
   "scripts": {
-    "test": "jest -- assert.test"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
@@ -20,12 +20,11 @@
     "sinon": "^2.4.1"
   },
   "devDependencies": {
+    "react": "^15.0.1",
     "babel-core": "^6.10.4",
     "babel-loader": "^6.2.4",
     "babel-preset-es2015": "^6.9.0",
     "babel-preset-react": "^6.11.0",
-    "babel-register": "^6.7.2",
-    "jest": "^20.0.4",
-    "react": "^15.0.1"
+    "babel-register": "^6.7.2"
   }
 }
