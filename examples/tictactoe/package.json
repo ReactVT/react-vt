@@ -1,22 +1,17 @@
 {
   "name": "tictactoe",
   "version": "1.0.0",
-  "description": "Codesmith testing unit",
+  "description": "Tic Tac Toe",
   "scripts": {
     "start": "node index.js",
     "build": "./node_modules/.bin/webpack -w",
     "test": "export NODE_ENV=test && mocha --timeout 8000 test/"
   },
   "repository": {
-    "type": "git",
-    "url": "git+https://github.com/CodesmithLLC/unit-12-testing.git"
+    "type": "git"
   },
   "author": "David Petri <petridw@gmail.com> (davidpetri.com)",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/CodesmithLLC/unit-12-testing/issues"
-  },
-  "homepage": "https://github.com/CodesmithLLC/unit-12-testing#readme",
   "dependencies": {
     "body-parser": "^1.15.0",
     "casperjs": "^1.1.4",
