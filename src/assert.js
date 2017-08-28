@@ -286,4 +286,13 @@ module.exports = {
   checkAssert,
   addAssert,
   deleteBlock,
+  getLocation,
+  tagTest,
+  idTest,
+  classTest,
+  componentTest,
+  nodeTest,
+  modifierController,
+  convertResult,
+  convertType
 }
