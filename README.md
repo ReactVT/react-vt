@@ -8,6 +8,8 @@ Users can define assertions and test them in real time while interacting with th
 
 
 ## Set Up
+**Please make sure that your application is running React and React-DOM version 15.x**
+
 1. Run npm install for React VT in your root project folder
 
 ```
